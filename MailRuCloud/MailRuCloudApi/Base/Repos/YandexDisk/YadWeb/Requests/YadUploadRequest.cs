@@ -21,7 +21,7 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Requests
             request.Method = "PUT";
             request.ContentLength = size;
             request.Referer = "https://disk.yandex.ru/client/disk";
-            request.Headers.Add("Origin", ConstSettings.CloudDomain);
+            request.Headers.Add("Origin", ConstSettings.YandexCloudDomain);
             request.Accept = "*/*";
             request.UserAgent = userAgent;
             request.AllowWriteStreamBuffering = false;

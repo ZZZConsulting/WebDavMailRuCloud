@@ -23,7 +23,7 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests
         {
             get
             {
-                const string uri = $"{ConstSettings.CloudDomain}/api/v2/dispatcher?api=2&email=anonym&x-email=anonym";
+                const string uri = $"{ConstSettings.MailCloudDomain}/api/v2/dispatcher?api=2&email=anonym&x-email=anonym";
                 return uri;
             }
         }

@@ -20,14 +20,17 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Requests
             _uuid = uuid;
         }
 
-        protected override string RelationalUri => "/registration-validations/auth/multi_step/start";
+        //1protected override string RelationalUri => "/registration-validations/auth/multi_step/start";
+        protected override string RelationalUri => "/v1/disk";
 
-        protected override HttpWebRequest CreateRequest(string baseDomain = null)
+        protected override HttpWebRequest CreateRequest( string baseDomain = null )
         {
-            var request = base.CreateRequest("https://passport.yandex.ru");
-            request.Referer = "https://passport.yandex.ru/auth/list?from=cloud&origin=disk_landing2_web_signin_ru&retpath=https%3A%2F%2Fdisk.yandex.ru%2Fclient%2Fdisk&backpath=https%3A%2F%2Fdisk.yandex.ru&mode=edit";
-            request.Headers["Sec-Fetch-Mode"] = "cors";
-            request.Headers["Sec-Fetch-Site"] = "same-origin";
+            //1var request = base.CreateRequest("https://passport.yandex.ru");
+            var request = base.CreateRequest( "https://cloud-api.yandex.net" );
+            //1request.Referer = "https://passport.yandex.ru/auth/list?from=cloud&origin=disk_landing2_web_signin_ru&retpath=https%3A%2F%2Fdisk.yandex.ru%2Fclient%2Fdisk&backpath=https%3A%2F%2Fdisk.yandex.ru&mode=edit";
+            //1request.Headers["Sec-Fetch-Mode"] = "cors";
+            //1request.Headers["Sec-Fetch-Site"] = "same-origin";
+            request.Headers[ "Authorization" ] = $"OAuth {Auth.AccessToken}";
 
             return request;
         }

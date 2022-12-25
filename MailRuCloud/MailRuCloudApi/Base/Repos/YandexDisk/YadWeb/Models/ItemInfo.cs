@@ -7,10 +7,10 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
     {
         private readonly string _prefix;
 
-        public YadItemInfoPostModel(string path, string prefix = "/disk")
+        public YadItemInfoPostModel(string path, string prefix = "")
         {
             _prefix = prefix;
-            Name = "resource";
+            Name = "v1/disk/resource";
             Path = path;
         }
 
@@ -36,20 +36,17 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
 
     class YadItemInfoRequestData : YadModelDataBase
     {
-        [JsonProperty("ctime")]
-        public long Ctime { get; set; }
+        [JsonProperty( "created" )]
+        public string Ctime { get; set; }
 
         [JsonProperty("meta")]
         public YadItemInfoRequestMeta Meta { get; set; }
 
-        [JsonProperty("mtime")]
-        public ulong Mtime { get; set; }
+        [JsonProperty( "modified" )]
+        public string Mtime { get; set; }
 
         [JsonProperty("path")]
         public string Path { get; set; }
-
-        [JsonProperty("utime")]
-        public long Utime { get; set; }
 
         [JsonProperty("type")]
         public string Type { get; set; }

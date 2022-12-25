@@ -23,6 +23,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Models\AccountInfo.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Models\KnownYadModelConverter.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Models\YadResourceStatsPostModel.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadAuthAccountsRequest.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadAuthAskV2Request.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadAuthDiskSkRequest.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadAuthLoginRequest.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadAuthPasswordRequest.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadAuthPreAuthRequestResult.cs" />
+    <Compile Remove="Base\Repos\YandexDisk\YadWeb\Requests\YadListRequest.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="XTSSharp\readme.txt" />
   </ItemGroup>
 

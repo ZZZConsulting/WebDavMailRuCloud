@@ -24,7 +24,7 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
             
             yield return new KeyValuePair<string, string>($"src.{index}", WebDavPath.Combine("/disk", Source));
             yield return new KeyValuePair<string, string>($"dst.{index}", WebDavPath.Combine("/disk", Destination));
-            yield return new KeyValuePair<string, string>($"force.{index}", Force ? "1" : "0");
+            yield return new KeyValuePair<string, string>($"overwrite.{index}", Force ? "1" : "0");
         }
     }
 

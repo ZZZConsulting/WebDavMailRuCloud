@@ -75,6 +75,9 @@ namespace YaR.Clouds.Links
         /// </summary>
         public void Load()
         {
+            //1  Файл со ссылками выключаем, чтобы по названию файла везде одинаковому не определял работающий сервис
+            return;
+
 
             if (!_cloud.Account.IsAnonymous)
             {

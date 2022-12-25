@@ -108,7 +108,7 @@ namespace YaR.Clouds
 	        }
 
 	        //TODO: subject to refact!!!
-            var ulink = resolveLinks ? await LinkManager.GetItemLink(path) : null;
+            var ulink = resolveLinks ? await LinkManager?.GetItemLink(path) : null;
 
             // bad link detected, just return stub
             // cause client cannot, for example, delete it if we return NotFound for this item
@@ -131,7 +131,15 @@ namespace YaR.Clouds
             //}
 
             var rp = null == ulink ? RemotePath.Get(path) : RemotePath.Get(ulink);
-            var entry = await Account.RequestRepo.FolderInfo(rp, depth:Settings.ListDepth);
+            IEntry entry = null;
+            try
+            {
+                entry = await Account.RequestRepo.FolderInfo( rp, depth: Settings.ListDepth );
+            }
+            catch
+            {
+                return null;
+            }
             if (null == entry)
                 return null;
 

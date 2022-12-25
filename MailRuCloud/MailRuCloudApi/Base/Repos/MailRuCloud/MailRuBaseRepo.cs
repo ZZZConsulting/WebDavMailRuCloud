@@ -77,12 +77,12 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud
             //request.Headers.Add("Referer", $"https://cloud.mail.ru/home{path}");
             //request.Headers.Add("Accept-Encoding", "gzip, deflate, br");
             //request.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
-            //request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36");
+            //request.Headers.TryAddWithoutValidation("User-Agent", ConstSettings.UserAgent);
             //request.Headers.Add("X-CSRF-Token", Authent.AccessToken);
             //request.Headers.Add("Token", Authent.AccessToken);
             //request.Headers.Add("Access-token", Authent.AccessToken);
             //content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-            
+
             request.Content = content;
             request.Content.Headers.ContentLength = file.OriginalSize;
 

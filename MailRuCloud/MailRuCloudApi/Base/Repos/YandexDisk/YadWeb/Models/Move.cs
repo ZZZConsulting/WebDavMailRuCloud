@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System.Text;
+using System;
 using Newtonsoft.Json;
 
 namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
 {
-    class YadMovePostModel : YadPostModel
+    class YadMoveRequestModel : YadRequestModel
     {
-        public YadMovePostModel(string sourcePath, string destPath, bool force = true)
+        public YadMoveRequestModel(string sourcePath, string destPath, bool? force = true)
         {
-            Name = "do-resource-move";
             Source = sourcePath;
             Destination = destPath;
             Force = force;
@@ -15,17 +15,31 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
 
         public string Source { get; set; }
         public string Destination { get; set; }
-        public bool Force { get; set; }
+        public bool? Force { get; set; }
 
-        public override IEnumerable<KeyValuePair<string, string>> ToKvp(int index)
+        public override string Method => "POST";
+
+        public override string RelationalUri
         {
-            foreach (var pair in base.ToKvp(index))
-                yield return pair;
-            
-            yield return new KeyValuePair<string, string>($"src.{index}", WebDavPath.Combine("/disk", Source));
-            yield return new KeyValuePair<string, string>($"dst.{index}", WebDavPath.Combine("/disk", Destination));
-            yield return new KeyValuePair<string, string>($"force.{index}", Force ? "1" : "0");
+            get
+            {
+                StringBuilder sb = new StringBuilder( "/v1/disk/resources/move?force_async=true&from=" );
+                sb.Append( Uri.EscapeDataString( Source ) );
+                sb.Append( "&path=" );
+                sb.Append( Uri.EscapeDataString( Destination ) );
+                if( Force.HasValue )
+                {
+                    sb.Append( "&overwrite=" );
+                    if( Force == true )
+                        sb.Append( "true" );
+                    if( Force == false )
+                        sb.Append( "false" );
+                }
+
+                return sb.ToString();
+            }
         }
+
     }
 
     internal class YadMoveRequestData : YadModelDataBase

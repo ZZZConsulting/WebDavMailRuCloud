@@ -14,7 +14,7 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests
         {
             get
             {
-                var uri = $"{ConstSettings.CloudDomain}/api/v2/dispatcher?client_id={Settings.ClientId}";
+                var uri = $"{ConstSettings.MailCloudDomain}/api/v2/dispatcher?client_id={Settings.ClientId}";
                 if (!Auth.IsAnonymous)
                     uri += $"&access_token={Auth.AccessToken}";
                 else

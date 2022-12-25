@@ -18,7 +18,9 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2
 
         public sealed override HttpCommonSettings HttpSettings { get; } = new()
         {
-            ClientId = string.Empty
+            ClientId = string.Empty,
+            CloudDomain = ConstSettings.MailCloudDomain,
+            RequestContentType = ConstSettings.MailDefaultRequestType
         };
 
         public WebV2RequestRepo(CloudSettings settings, IBasicCredentials creds, AuthCodeRequiredDelegate onAuthCodeRequired)

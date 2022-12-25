@@ -1,27 +1,35 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
 {
-    internal class YadOperationStatusPostModel : YadPostModel
+    internal class YadOperationStatusRequestModel : YadRequestModel
     {
-        public YadOperationStatusPostModel(string oid)
+        public YadOperationStatusRequestModel( string oid)
         {
-            Name = "do-status-operation";
             Oid = oid;
         }
 
         public string Oid { get; set; }
 
-        public override IEnumerable<KeyValuePair<string, string>> ToKvp(int index)
-        {
-            foreach (var pair in base.ToKvp(index))
-                yield return pair;
-            
-            yield return new KeyValuePair<string, string>($"oid.{index}", Oid);
-        }
-    }
 
+        public override string Method => "GET";
+
+        public override string RelationalUri
+        {
+            get
+            {
+                StringBuilder sb = new StringBuilder( "/v1/disk/operations/" );
+                sb.Append( Uri.EscapeDataString( Oid ) );
+
+                return sb.ToString();
+            }
+        }
+
+    }
 
     internal class YadOperationStatusData : YadModelDataBase
     {

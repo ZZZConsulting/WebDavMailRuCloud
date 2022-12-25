@@ -20,7 +20,7 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebM1.Requests
         {
             get
             {
-                var uri = $"{ConstSettings.CloudDomain}/api/m1/clone?conflict=rename&folder={Uri.EscapeDataString(_toPath)}&weblink={Uri.EscapeDataString(_fromUrl)}&access_token={Auth.AccessToken}";
+                var uri = $"{ConstSettings.MailCloudDomain}/api/m1/clone?conflict=rename&folder={Uri.EscapeDataString(_toPath)}&weblink={Uri.EscapeDataString(_fromUrl)}&access_token={Auth.AccessToken}";
                 return uri;
             }
         }

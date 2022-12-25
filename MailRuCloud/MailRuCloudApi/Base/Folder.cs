@@ -27,7 +27,8 @@ namespace YaR.Clouds.Base
         /// <param name="size">Folder size.</param>
         /// <param name="fullPath">Full folder path.</param>
         /// <param name="publicLinks">Public folder link.</param>
-        public Folder(FileSize size, string fullPath, IEnumerable<PublicLinkInfo> publicLinks = null):this(fullPath)
+        public Folder(FileSize size, string fullPath, IEnumerable<PublicLinkInfo> publicLinks = null)
+            : this(fullPath)
         {
             Size = size;
             if (null != publicLinks)

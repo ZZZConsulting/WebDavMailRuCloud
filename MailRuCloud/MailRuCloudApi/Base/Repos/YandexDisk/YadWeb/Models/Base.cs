@@ -7,21 +7,21 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
 {
     class YadPostData
     {
-        public string Sk { get; set; }
-        public string IdClient { get; set; }
+        //1public string Sk { get; set; }
+        //1public string IdClient { get; set; }
         public List<YadPostModel> Models { get; set; } = new();
 
         public byte[] CreateHttpContent()
         {
             var keyValues = new List<KeyValuePair<string, string>>
             {
-                new("sk", Sk),
-                new("idClient", IdClient)
+                //new("sk", Sk),
+                //new("idClient", IdClient)
             };
 
-            keyValues.AddRange(Models.SelectMany((model, i) => model.ToKvp(i)));
+            keyValues.AddRange( Models.SelectMany( ( model, i ) => model.ToKvp( i ) ) );
 
-            FormUrlEncodedContent z = new FormUrlEncodedContent(keyValues);
+            FormUrlEncodedContent z = new FormUrlEncodedContent( keyValues );
             return z.ReadAsByteArrayAsync().Result;
         }
     }
@@ -36,59 +36,99 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
         public string Name { get; set; }
     }
 
-
-
-
-
-
-
-    public class YadResponceResult
+    abstract class YadRequestModel
     {
-        [JsonProperty("uid")]
-        public long Uid { get; set; }
-
-        [JsonProperty("login")]
-        public string Login { get; set; }
-
-        [JsonProperty("sk")]
-        public string Sk { get; set; }
-
-        [JsonProperty("version")]
-        public string Version { get; set; }
-
-        [JsonProperty("models")]
-        public List<YadResponseModel> Models { get; set; }
+        public abstract string Method { get; }
+        public abstract string RelationalUri { get; }
     }
+
+
+
+
+
+
+    ////public class YadResponceResult
+    ////{
+    ////    [JsonProperty("uid")]
+    ////    public long Uid { get; set; }
+
+    ////    [JsonProperty("login")]
+    ////    public string Login { get; set; }
+
+    ////    [JsonProperty("sk")]
+    ////    public string Sk { get; set; }
+
+    ////    [JsonProperty("version")]
+    ////    public string Version { get; set; }
+
+    ////    [JsonProperty("models")]
+    ////    public List<YadResponseModel> Models { get; set; }
+    ////}
 
     public class YadResponseModel
     {
-        [JsonProperty("model")]
-        public string ModelName { get; set; }
+        [JsonProperty( "message" )]
+        public string Message { get; set; }
 
-        [JsonProperty("error")]
-        public YadResponseError Error { get; set; }
+        [JsonProperty( "description" )]
+        public string Description { get; set; }
+
+        [JsonProperty( "error" )]
+        public string Error { get; set; }
+
+        [JsonProperty( "href" )]
+        public string Href { get; set; }
+
+        [JsonProperty( "method" )]
+        private string _Method { get; set; }
+        public HttpMethod Method
+        {
+            get
+            {
+                return _Method switch
+                {
+                    "GET" => HttpMethod.Get,
+                    "PUT" => HttpMethod.Put,
+                    "POST" => HttpMethod.Post,
+                    "HEAD" => HttpMethod.Head,
+                    // Студия ругается, что нет такого
+                    //"PATCH" => HttpMethod.Patch,
+                    "DELETE" => HttpMethod.Delete,
+                    "TRACE" => HttpMethod.Trace,
+                    "OPTIONS" => HttpMethod.Options,
+                    _ => null
+                };
+            }
+        }
+
+        [JsonProperty( "templated" )]
+        public string Tempalted { get; set; }
     }
 
 
-    public class YadResponseModel<TData, TParams> : YadResponseModel
-        //where TData : YadModelDataBase
+    public class YadStatusModel : YadResponseModel
     {
-        [JsonProperty("params")]
-        public TParams Params { get; set; }
-
-        [JsonProperty("data")]
-        public TData Data { get; set; }
+        [JsonProperty( "status" )]
+        public string Status { get; set; }
     }
+
+
+    //public class YadResponseModel<TData, TParams> : YadResponseModel
+    //    //where TData : YadModelDataBase
+    //{
+    //    [JsonProperty("params")]
+    //    public TParams Params { get; set; }
+
+    //    [JsonProperty("data")]
+    //    public TData Data { get; set; }
+    //}
 
     public class YadResponseError
     {
         [JsonProperty("id")]
         public string Id { get; set; }
 
-        [JsonProperty("message")]
-        public string Message { get; set; }
     }
-
 
 
     public class YadModelDataBase

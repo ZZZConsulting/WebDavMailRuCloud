@@ -23,13 +23,14 @@ namespace YaR.Clouds.Base.Requests
         }
 
         protected abstract string RelationalUri { get; }
+        protected virtual string Method => "GET";
 
         protected virtual HttpWebRequest CreateRequest(string baseDomain = null)
         {
-            string domain = string.IsNullOrEmpty(baseDomain) ? ConstSettings.CloudDomain : baseDomain;
+            string domain = string.IsNullOrEmpty(baseDomain) ? Settings.CloudDomain : baseDomain;
             var uriz = new Uri(new Uri(domain), RelationalUri);
             
-            // supressing escaping is obsolete and breaks, for example, chinese names
+            // suppressing escaping is obsolete and breaks, for example, Chinese names
             // url generated for %E2%80%8E and %E2%80%8F seems ok, but mail.ru replies error
             // https://stackoverflow.com/questions/20211496/uri-ignore-special-characters
             //var udriz = new Uri(new Uri(domain), RelationalUri, true);
@@ -37,11 +38,11 @@ namespace YaR.Clouds.Base.Requests
             var request = (HttpWebRequest)WebRequest.Create(uriz);
             request.Proxy = Settings.Proxy;
             request.CookieContainer = Auth?.Cookies;
-            request.Method = "GET";
-            request.ContentType = ConstSettings.DefaultRequestType;
+            request.Method = Method;
+            //1request.ContentType = ConstSettings.DefaultRequestType;
+            request.ContentType = Settings.RequestContentType;
             request.Accept = "application/json";
             request.UserAgent = Settings.UserAgent;
-
 
             #if NET48
             request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
@@ -62,21 +63,31 @@ namespace YaR.Clouds.Base.Requests
 
         public virtual async Task<T> MakeRequestAsync()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
+            Stopwatch watch = Stopwatch.StartNew();
 
             var httprequest = CreateRequest();
 
-            var content = CreateHttpContent();
-            if (content != null)
-            {
-                httprequest.Method = "POST";
-                var stream = httprequest.GetRequestStream();
-                await stream.WriteAsync(content, 0, content.Length);
-            }
+            //var content = CreateHttpContent();
+            //if (content != null)
+            //{
+            //    httprequest.Method = "POST";
+            //    var stream = httprequest.GetRequestStream();
+            //    await stream.WriteAsync(content, 0, content.Length);
+            //}
+            HttpWebResponse response = null;
             try
             {
-                using var response = (HttpWebResponse)await httprequest.GetResponseAsync();
+                try
+                {
+                    response = (HttpWebResponse)await httprequest.GetResponseAsync();
+                }
+                catch( WebException we )
+                {
+                    var resp = we.Response as HttpWebResponse;
+                    if( resp == null )
+                        throw;
+                    response = resp;
+                }
 
                 if ((int) response.StatusCode >= 500)
                     throw new RequestException("Server fault")
@@ -95,7 +106,12 @@ namespace YaR.Clouds.Base.Requests
                     result = DeserializeMessage(response.Headers, Transport(responseStream));
                 }
 
-                if (!result.Ok || response.StatusCode != HttpStatusCode.OK)
+                if (!result.Ok || !(
+                    response.StatusCode == HttpStatusCode.OK ||
+                    response.StatusCode == HttpStatusCode.Created ||
+                    response.StatusCode == HttpStatusCode.Accepted ||
+                    response.StatusCode == HttpStatusCode.NoContent
+                    ))
                 {
                     var exceptionMessage =
                         $"Request failed (status code {(int) response.StatusCode}): {result.Description}";
@@ -122,9 +138,8 @@ namespace YaR.Clouds.Base.Requests
             {
                 watch.Stop();
                 Logger.Debug($"HTTP:{httprequest.Method}:{httprequest.RequestUri.AbsoluteUri} ({watch.Elapsed.Milliseconds} ms)");
+                response?.Dispose();
             }
-
-
         }
 
         protected abstract TConvert Transport(Stream stream);

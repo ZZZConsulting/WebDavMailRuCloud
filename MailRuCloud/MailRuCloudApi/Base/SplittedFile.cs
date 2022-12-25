@@ -45,7 +45,7 @@ namespace YaR.Clouds.Base
         private readonly File _fileHeader;
 
         /// <summary>
-        /// List of phisical files contains data
+        /// List of physical files contains data
         /// </summary>
         public override List<File> Parts { get; }
 

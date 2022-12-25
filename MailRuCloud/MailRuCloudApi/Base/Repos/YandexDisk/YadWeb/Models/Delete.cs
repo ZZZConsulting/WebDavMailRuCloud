@@ -1,24 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models
 {
-    class YadDeletePostModel : YadPostModel
+    class YadDeleteRequestModel : YadRequestModel
     {
-        public YadDeletePostModel(string path)
+        public YadDeleteRequestModel( string path)
         {
-            Name = "do-resource-delete";
             Path = path;
         }
 
         public string Path { get; set; }
 
-        public override IEnumerable<KeyValuePair<string, string>> ToKvp(int index)
+        public override string Method => "DELETE";
+
+        public override string RelationalUri
         {
-            foreach (var pair in base.ToKvp(index))
-                yield return pair;
-            
-            yield return new KeyValuePair<string, string>($"id.{index}", WebDavPath.Combine("/disk", Path));
+            get
+            {
+                StringBuilder sb = new StringBuilder( "/v1/disk/resources?force_async=true&path=" );
+                sb.Append( Uri.EscapeDataString( Path ) );
+
+                return sb.ToString();
+            }
         }
     }
 

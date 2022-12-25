@@ -10,6 +10,7 @@ using NWebDav.Server.Http;
 using NWebDav.Server.HttpListener;
 using NWebDav.Server.Locking;
 using NWebDav.Server.Logging;
+using YaR.Clouds.Base.Repos.MailRuCloud;
 using YaR.Clouds.WebDavStore;
 using YaR.Clouds.WebDavStore.StoreBase;
 using RequestHandlerFactory = YaR.Clouds.WebDavStore.RequestHandlerFactory;
@@ -87,7 +88,7 @@ namespace YaR.Clouds.Console
             }
         }
 
-        private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
+        private const string DefaultUserAgent = ConstSettings.UserAgent;
         private static string ConstructUserAgent(string fromOptions, string fromConfig)
         {
             if (!string.IsNullOrWhiteSpace(fromOptions))

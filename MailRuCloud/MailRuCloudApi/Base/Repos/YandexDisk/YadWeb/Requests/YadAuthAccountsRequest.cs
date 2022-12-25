@@ -18,11 +18,14 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Requests
 
         protected override string RelationalUri => "/registration-validations/auth/accounts";
 
-        protected override HttpWebRequest CreateRequest(string baseDomain = null)
-        {
-            var request = base.CreateRequest("https://passport.yandex.ru");
-            return request;
-        }
+        protected override string CloudDomain => "https://cloud-api.yandex.net";
+        protected override string RequestContentType => "application/json";
+
+        //protected override HttpWebRequest CreateRequest(string baseDomain = null)
+        //{
+        //    var request = base.CreateRequest("https://passport.yandex.ru");
+        //    return request;
+        //}
 
         protected override byte[] CreateHttpContent()
         {

@@ -22,8 +22,8 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests
             request.CookieContainer = authent.Cookies;
             request.Method = "PUT";
             request.ContentLength = file.OriginalSize; // + boundary.Start.LongLength + boundary.End.LongLength;
-            request.Referer = $"{ConstSettings.CloudDomain}/home/{Uri.EscapeDataString(file.Path)}";
-            request.Headers.Add("Origin", ConstSettings.CloudDomain);
+            request.Referer = $"{ConstSettings.MailCloudDomain}/home/{Uri.EscapeDataString(file.Path)}";
+            request.Headers.Add("Origin", ConstSettings.MailCloudDomain);
             request.Host = url.Host;
             //request.ContentType = $"multipart/form-data; boundary=----{boundary.Guid}";
             request.Accept = "*/*";

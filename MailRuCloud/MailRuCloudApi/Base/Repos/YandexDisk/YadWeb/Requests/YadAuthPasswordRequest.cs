@@ -69,6 +69,10 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Requests
             if (res.Result.State == "auth_challenge")
                 throw new AuthenticationException("Browser login required to accept additional confirmations");
 
+            // If password is not matched, we have an error "password.not_matched"
+            if( res.Result.HasError )
+                throw new AuthenticationException( $"Errors: {string.Join( ", ", res.Result.Errors )}" );
+
             var uid = responseHeaders["X-Default-UID"];
             if (string.IsNullOrWhiteSpace(uid))
                 throw new AuthenticationException("Cannot get X-Default-UID");
