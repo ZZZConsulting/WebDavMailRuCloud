@@ -115,6 +115,10 @@ internal class YadAuthPasswordRequest : BaseRequestJson<YadAuthPasswordRequestRe
             throw new AuthenticationException("Authentication failed: " + string.Join(", ", res.Result.Errors));
         }
 
+        if (res.Result.State == "rfc_totp")
+        {
+            return res;
+        }
         var uid = responseHeaders["X-Default-UID"];
         if (string.IsNullOrWhiteSpace(uid))
             throw new AuthenticationException("Cannot get X-Default-UID");

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Security.Authentication;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Requests;
@@ -59,14 +60,25 @@ internal class YadWebAuth : IAuth
         if (passwdAuth.HasError)
             throw new AuthenticationException($"{nameof(YadAuthPasswordRequest)} errors: {passwdAuth.Errors.Aggregate((f, s) => f + "," + s)}");
 
+        var defaultUid = passwdAuth.DefaultUid;
+        if (passwdAuth.State == "rfc_totp")
+        {
+            if (String.IsNullOrEmpty(TOTPSecret))
+                throw new AuthenticationException($"Missing TOTP secret");
+            var totpAuth = await new YadAuthTotpRequest(_settings, this, preAuthResult.Csrf, loginAuth.TrackId, TOTPSecret)
+                .MakeRequestAsync(connectionLimiter);
+            if (totpAuth.HasError)
+                throw new AuthenticationException($"{nameof(YadAuthTotpRequest)} errors: {totpAuth.Errors.Aggregate((f, s) => f + "," + s)}");
+            defaultUid = totpAuth.DefaultUid;
+        }
 
         var accsAuth = await new YadAuthAccountsRequest(_settings, this, preAuthResult.Csrf)
             .MakeRequestAsync(connectionLimiter);
         if (accsAuth.HasError)
             throw new AuthenticationException($"{nameof(YadAuthAccountsRequest)} error");
 
-        var askv2 = await new YadAuthAskV2Request(_settings, this, accsAuth.Csrf, passwdAuth.DefaultUid)
-            .MakeRequestAsync(connectionLimiter);
+        var askv2 = await new YadAuthAskV2Request(_settings, this, accsAuth.Csrf, defaultUid)
+        .MakeRequestAsync(connectionLimiter);
         if (accsAuth.HasError)
             throw new AuthenticationException($"{nameof(YadAuthAskV2Request)} error");
 
@@ -79,8 +91,36 @@ internal class YadWebAuth : IAuth
         return true;
     }
 
+    private string TOTP_SEPARATOR = "@@@";
+
     public string Login => Credentials.Login;
-    public string Password => Credentials.Password;
+
+    public string Password
+    {
+        get
+        {
+            if (Credentials.Password.Contains(TOTP_SEPARATOR))
+            {
+                var parts = Regex.Split(Credentials.Password, TOTP_SEPARATOR);
+                return parts[0];
+            }
+            return Credentials.Password;
+        }
+    }
+
+    public string TOTPSecret
+    {
+        get
+        {
+            if (Credentials.Password.Contains(TOTP_SEPARATOR))
+            {
+                var parts = Regex.Split(Credentials.Password, TOTP_SEPARATOR);
+                return parts[1];
+            }
+            return null;
+        }
+    }
+
     public string DiskSk { get; set; }
     public string Uuid { get; set; }
 
