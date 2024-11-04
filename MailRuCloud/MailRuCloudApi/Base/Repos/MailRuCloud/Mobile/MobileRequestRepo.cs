@@ -32,6 +32,11 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile
         public MobileRequestRepo(CloudSettings settings, IWebProxy proxy, IAuth auth, int listDepth)
             : base(new Credentials(settings, auth.Login, auth.Password))
         {
+            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
+
+            // required for Windows 7 breaking connection
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13 | SecurityProtocolType.Tls12;
+
             _connectionLimiter = new SemaphoreSlim(settings.MaxConnectionCount);
             _listDepth = listDepth;
 
@@ -47,11 +52,6 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile
                     return server;
                 },
                 _ => TimeSpan.FromSeconds(MetaServerExpiresSec));
-
-            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
-
-            // required for Windows 7 breaking connection
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13 | SecurityProtocolType.Tls12;
 
             //_downloadServer = new Cached<ServerRequestResult>(old =>
             //    {

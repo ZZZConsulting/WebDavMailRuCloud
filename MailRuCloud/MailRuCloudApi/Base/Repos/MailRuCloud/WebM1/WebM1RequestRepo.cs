@@ -44,16 +44,16 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebM1
             IBasicCredentials credentials, AuthCodeRequiredDelegate onAuthCodeRequired)
             : base(credentials)
         {
+            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
+
+            // required for Windows 7 breaking connection
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13 | SecurityProtocolType.Tls12;
+
             _connectionLimiter = new SemaphoreSlim(settings.MaxConnectionCount);
             ShardManager = new ShardManager(_connectionLimiter, this);
             HttpSettings.Proxy = proxy;
             HttpSettings.CloudSettings = settings;
             _onAuthCodeRequired = onAuthCodeRequired;
-
-			ServicePointManager.DefaultConnectionLimit = int.MaxValue;
-
-            // required for Windows 7 breaking connection
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13 | SecurityProtocolType.Tls12;
 
             Auth = new OAuth(_connectionLimiter, HttpSettings, credentials, onAuthCodeRequired);
 

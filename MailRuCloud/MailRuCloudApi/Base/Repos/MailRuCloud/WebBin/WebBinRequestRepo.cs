@@ -21,8 +21,6 @@ using AccountInfoRequest = YaR.Clouds.Base.Repos.MailRuCloud.WebM1.Requests.Acco
 using CreateFolderRequest = YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests.CreateFolderRequest;
 using MoveRequest = YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests.MoveRequest;
 using static YaR.Clouds.Cloud;
-using System.Timers;
-using System.Xml.Linq;
 
 namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
 {
@@ -53,6 +51,11 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
         public WebBinRequestRepo(CloudSettings settings, IBasicCredentials credentials, AuthCodeRequiredDelegate onAuthCodeRequired)
             : base(credentials)
         {
+            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
+
+            // required for Windows 7 breaking connection
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13 | SecurityProtocolType.Tls12;
+
             _connectionLimiter = new SemaphoreSlim(settings.MaxConnectionCount);
 
             HttpSettings.CloudSettings = settings;
@@ -63,11 +66,6 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
             Auth = new OAuth(_connectionLimiter, HttpSettings, credentials, onAuthCodeRequired);
 
             ShardManager = new ShardManager(_connectionLimiter, this);
-
-            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
-
-            // required for Windows 7 breaking connection
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13 | SecurityProtocolType.Tls12;
         }
 
 
@@ -293,7 +291,7 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
 
             if (res.IsSuccess)
             {
-                CachedSharedList.Value[fullPath] = new[] { new PublicLinkInfo(PublicBaseUrlDefault + res.Url) };
+                CachedSharedList.Value[fullPath] = [new PublicLinkInfo(PublicBaseUrlDefault + res.Url)];
             }
 
             return res;
@@ -387,6 +385,12 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
 
         public async Task<CreateFolderResult> CreateFolder(string path)
         {
+            /*
+             * В названии папок нельзя использовать символы «" * / : < > ? \ |».
+             * Также название не может состоять только из точки «.» или из двух точек «..»
+             */
+            path = StripBadSymbols(path);
+
             //return (await new CreateFolderRequest(HttpSettings, Authenticator, path).MakeRequestAsync())
             //    .ToCreateFolderResult();
 
@@ -396,6 +400,12 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
 
         public async Task<AddFileResult> AddFile(string fileFullPath, IFileHash fileHash, FileSize fileSize, DateTime dateTime, ConflictResolver? conflictResolver)
         {
+            /*
+             * В названии папок нельзя использовать символы «" * / : < > ? \ |».
+             * Также название не может состоять только из точки «.» или из двух точек «..»
+             */
+            fileFullPath = StripBadSymbols(fileFullPath);
+
             //var res = await new CreateFileRequest(Proxy, Authenticator, fileFullPath, fileHash, fileSize, conflictResolver)
             //    .MakeRequestAsync(_connectionLimiter);
             //return res.ToAddFileResult();
@@ -408,6 +418,28 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.WebBin
 
             var res = req.ToAddFileResult();
             return res;
+        }
+
+        public string StripBadSymbols(string fullPath)
+        {
+            /*
+             * В названии папок нельзя использовать символы «" * / : < > ? \ |».
+             * Также название не может состоять только из точки «.» или из двух точек «..»
+             */
+            string name = WebDavPath.Name(fullPath);
+            string newName = name
+                .Replace("*", "\u2022") // •
+                .Replace(":", "\u205e") // ⁞
+                .Replace("<", "\u00ab") // «
+                .Replace(">", "\u00bb") // »
+                .Replace("?", "\u203d") // ‽
+                .Replace("|", "\u2502") // │
+                .Replace("/", "~")
+                .Replace("\\", "~")
+                ;
+            return name != newName
+                ? WebDavPath.Combine(WebDavPath.Parent(fullPath), newName)
+                : name;
         }
 
         public async Task<CheckUpInfo> DetectOutsideChanges() => await Task.FromResult<CheckUpInfo>(null);
