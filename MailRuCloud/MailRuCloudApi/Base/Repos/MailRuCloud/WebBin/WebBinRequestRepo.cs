@@ -385,12 +385,6 @@ class WebBinRequestRepo : MailRuBaseRepo, IRequestRepo
 
     public async Task<CreateFolderResult> CreateFolder(string path)
     {
-        /*
-         * В названии папок нельзя использовать символы «" * / : < > ? \ |».
-         * Также название не может состоять только из точки «.» или из двух точек «..»
-         */
-        path = StripBadSymbols(path);
-
         //return (await new CreateFolderRequest(HttpSettings, Authenticator, path).MakeRequestAsync())
         //    .ToCreateFolderResult();
 
@@ -400,12 +394,6 @@ class WebBinRequestRepo : MailRuBaseRepo, IRequestRepo
 
     public async Task<AddFileResult> AddFile(string fileFullPath, IFileHash fileHash, FileSize fileSize, DateTime dateTime, ConflictResolver? conflictResolver)
     {
-        /*
-         * В названии папок нельзя использовать символы «" * / : < > ? \ |».
-         * Также название не может состоять только из точки «.» или из двух точек «..»
-         */
-        fileFullPath = StripBadSymbols(fileFullPath);
-
         //var res = await new CreateFileRequest(Proxy, Authenticator, fileFullPath, fileHash, fileSize, conflictResolver)
         //    .MakeRequestAsync(_connectionLimiter);
         //return res.ToAddFileResult();
@@ -418,28 +406,6 @@ class WebBinRequestRepo : MailRuBaseRepo, IRequestRepo
 
         var res = req.ToAddFileResult();
         return res;
-    }
-
-    public string StripBadSymbols(string fullPath)
-    {
-        /*
-         * В названии папок нельзя использовать символы «" * / : < > ? \ |».
-         * Также название не может состоять только из точки «.» или из двух точек «..»
-         */
-        string name = WebDavPath.Name(fullPath);
-        string newName = name
-            .Replace("*", "\u2022") // •
-            .Replace(":", "\u205e") // ⁞
-            .Replace("<", "\u00ab") // «
-            .Replace(">", "\u00bb") // »
-            .Replace("?", "\u203d") // ‽
-            .Replace("|", "\u2502") // │
-            .Replace("/", "~")
-            .Replace("\\", "~")
-            ;
-        return name != newName
-            ? WebDavPath.Combine(WebDavPath.Parent(fullPath), newName)
-            : name;
     }
 
     public async Task<CheckUpInfo> DetectOutsideChanges() => await Task.FromResult<CheckUpInfo>(null);

@@ -1247,7 +1247,19 @@ public partial class Cloud : IDisposable
         CancelToken.Cancel(false);
     }
 
-    /// <summary>
+
+    public bool CreateFolder(string name, string basePath)
+    {
+        /*
+         * В названии папок нельзя использовать символы «" * / : < > ? \ |».
+         * Также название не может состоять только из точки «.» или из двух точек «..»
+         */
+        name = ReplaceBadSymbols(name);
+
+        return CreateFolderAsync(name, basePath).Result;
+    }
+
+     /// <summary>
     /// Create folder on the server.
     /// </summary>
     /// <param name="name">New path name.</param>
@@ -1258,12 +1270,7 @@ public partial class Cloud : IDisposable
         return await CreateFolderAsync(WebDavPath.Combine(basePath, name));
     }
 
-    public bool CreateFolder(string name, string basePath)
-    {
-        return CreateFolderAsync(name, basePath).Result;
-    }
-
-    public async Task<bool> CreateFolderAsync(string fullPath)
+   public async Task<bool> CreateFolderAsync(string fullPath)
     {
         try
         {
@@ -1475,6 +1482,15 @@ public partial class Cloud : IDisposable
 
     public async Task<AddFileResult> AddFile(IFileHash hash, string fullFilePath, long size, ConflictResolver? conflict = null)
     {
+        /*
+         * В названии папок нельзя использовать символы «" * / : < > ? \ |».
+         * Также название не может состоять только из точки «.» или из двух точек «..»
+         */
+        string name = WebDavPath.Name(fullFilePath);
+        string newName = ReplaceBadSymbols(name);
+        if (newName != name)
+            fullFilePath = WebDavPath.Combine(WebDavPath.Parent(fullFilePath), newName);
+
         try
         {
             DateTime timestampBeforeOperation = DateTime.Now;
@@ -1558,5 +1574,24 @@ public partial class Cloud : IDisposable
     public void CleanTrash()
     {
         RequestRepo.CleanTrash();
+    }
+
+    public string ReplaceBadSymbols(string name)
+    {
+        /*
+         * В названии папок нельзя использовать символы «" * / : < > ? \ |».
+         * Также название не может состоять только из точки «.» или из двух точек «..»
+         */
+        string newName = name
+            .Replace("*", "\u2022") // •
+            .Replace(":", "\u205e") // ⁞
+            .Replace("<", "\u00ab") // «
+            .Replace(">", "\u00bb") // »
+            .Replace("?", "\u203d") // ‽
+            .Replace("|", "\u2502") // │
+            .Replace("/", "~")
+            .Replace("\\", "~")
+            ;
+        return newName;
     }
 }
