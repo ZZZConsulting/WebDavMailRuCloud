@@ -1,4 +1,4 @@
-set ver=1.24.10.31
+set ver=1.24.11.04
 set options=-tzip -mx9 -r -sse -x!*.pdb -x!*dev*
 
 "C:\Program Files\7-Zip\7z.exe" a %options% "BrowserAuthenticator\bin\Release\BrowserAuthenticator-%ver%-net7.0-windows.zip" ".\BrowserAuthenticator\bin\Release\net7.0-windows\*"
