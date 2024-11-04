@@ -2,22 +2,21 @@
 using YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests.Types;
 using YaR.Clouds.Base.Requests;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests;
+
+abstract class BaseRequestMobile<T> : BaseRequest<ResponseBodyStream, T> where T : class
 {
-    abstract class BaseRequestMobile<T> : BaseRequest<ResponseBodyStream, T> where T : class
+    private readonly string _metaServer;
+
+    protected BaseRequestMobile(HttpCommonSettings settings, IAuth auth, string metaServer) : base(settings, auth)
     {
-        private readonly string _metaServer;
+        _metaServer = metaServer;
+    }
 
-        protected BaseRequestMobile(HttpCommonSettings settings, IAuth auth, string metaServer) : base(settings, auth)
-        {
-            _metaServer = metaServer;
-        }
+    protected override string RelationalUri => $"{_metaServer}?token={_auth.AccessToken}&client_id={_settings.ClientId}";
 
-        protected override string RelationalUri => $"{_metaServer}?token={_auth.AccessToken}&client_id={_settings.ClientId}";
-
-        protected override ResponseBodyStream Transport(Stream stream)
-        {
-            return new ResponseBodyStream(stream);
-        }
+    protected override ResponseBodyStream Transport(Stream stream)
+    {
+        return new ResponseBodyStream(stream);
     }
 }

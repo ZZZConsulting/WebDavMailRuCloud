@@ -1,21 +1,20 @@
 ﻿using YaR.Clouds.Base.Requests;
 using YaR.Clouds.Base.Requests.Types;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests
-{
-    class AuthTokenRequest : BaseRequestJson<AuthTokenRequestResult>
-    {
-        public AuthTokenRequest(HttpCommonSettings settings, IAuth auth) : base(settings, auth)
-        {
-        }
+namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests;
 
-        protected override string RelationalUri
+class AuthTokenRequest : BaseRequestJson<AuthTokenRequestResult>
+{
+    public AuthTokenRequest(HttpCommonSettings settings, IAuth auth) : base(settings, auth)
+    {
+    }
+
+    protected override string RelationalUri
+    {
+        get
         {
-            get
-            {
-                const string uri = "/api/v2/tokens/csrf";
-                return uri;
-            }
+            const string uri = "/api/v2/tokens/csrf";
+            return uri;
         }
     }
 }

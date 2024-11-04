@@ -8,59 +8,58 @@ using YaR.Clouds.Base.Requests.Types;
 using YaR.Clouds.Base.Streams;
 using YaR.Clouds.Common;
 
-namespace YaR.Clouds.Base.Repos
+namespace YaR.Clouds.Base.Repos;
+
+public interface IRequestRepo
 {
-    public interface IRequestRepo
-    {
-        IAuth Auth { get; }
-        HttpCommonSettings HttpSettings { get; }
+    IAuth Auth { get; }
+    HttpCommonSettings HttpSettings { get; }
 
 
-        Task<CheckUpInfo> DetectOutsideChanges();
+    Task<CheckUpInfo> DetectOutsideChanges();
 
-        Stream GetDownloadStream(File file, long? start = null, long? end = null);
+    Stream GetDownloadStream(File file, long? start = null, long? end = null);
 
-        Task<UploadFileResult> DoUpload(HttpClient client, PushStreamContent content, File file);
+    Task<UploadFileResult> DoUpload(HttpClient client, PushStreamContent content, File file);
 
-        Task<IEntry> FolderInfo(RemotePath path, int offset = 0, int limit = int.MaxValue, int depth = 1);
+    Task<IEntry> FolderInfo(RemotePath path, int offset = 0, int limit = int.MaxValue, int depth = 1);
 
-        Task<FolderInfoResult> ItemInfo(RemotePath path, int offset = 0, int limit = int.MaxValue);
+    Task<FolderInfoResult> ItemInfo(RemotePath path, int offset = 0, int limit = int.MaxValue);
 
-        Task<AccountInfoResult> AccountInfo();
+    Task<AccountInfoResult> AccountInfo();
 
-        Task<CreateFolderResult> CreateFolder(string path);
+    Task<CreateFolderResult> CreateFolder(string path);
 
-        Task<AddFileResult> AddFile(string fileFullPath, IFileHash fileHash, FileSize fileSize, DateTime dateTime, ConflictResolver? conflictResolver);
+    Task<AddFileResult> AddFile(string fileFullPath, IFileHash fileHash, FileSize fileSize, DateTime dateTime, ConflictResolver? conflictResolver);
 
-        Task<CloneItemResult> CloneItem(string fromUrl, string toPath);
+    Task<CloneItemResult> CloneItem(string fromUrl, string toPath);
 
-        Task<CopyResult> Copy(string sourceFullPath, string destinationPath, ConflictResolver? conflictResolver = null);
+    Task<CopyResult> Copy(string sourceFullPath, string destinationPath, ConflictResolver? conflictResolver = null);
 
-        Task<CopyResult> Move(string sourceFullPath, string destinationPath, ConflictResolver? conflictResolver = null);
+    Task<CopyResult> Move(string sourceFullPath, string destinationPath, ConflictResolver? conflictResolver = null);
 
-        Task<PublishResult> Publish(string fullPath);
+    Task<PublishResult> Publish(string fullPath);
 
-        Task<UnpublishResult> Unpublish(Uri publicLink, string fullPath);
+    Task<UnpublishResult> Unpublish(Uri publicLink, string fullPath);
 
-        Task<RemoveResult> Remove(string fullPath);
+    Task<RemoveResult> Remove(string fullPath);
 
-        Task<RenameResult> Rename(string fullPath, string newName);
+    Task<RenameResult> Rename(string fullPath, string newName);
 
-        //TODO: move to inner repo functionality
-        Dictionary<ShardType, ShardInfo> GetShardInfo1();
+    //TODO: move to inner repo functionality
+    Dictionary<ShardType, ShardInfo> GetShardInfo1();
 
-        IEnumerable<PublicLinkInfo> GetShareLinks(string path);
+    IEnumerable<PublicLinkInfo> GetShareLinks(string path);
 
-        void CleanTrash();
+    void CleanTrash();
 
-        //TODO: bad quick patch
-        string ConvertToVideoLink(Uri publicLink, SharedVideoResolution videoResolution);
+    //TODO: bad quick patch
+    string ConvertToVideoLink(Uri publicLink, SharedVideoResolution videoResolution);
 
-        ICloudHasher GetHasher();
+    ICloudHasher GetHasher();
 
-        bool SupportsAddSmallFileByHash { get; }
-        bool SupportsDeduplicate { get; }
+    bool SupportsAddSmallFileByHash { get; }
+    bool SupportsDeduplicate { get; }
 
-        string PublicBaseUrlDefault { get; }
-    }
+    string PublicBaseUrlDefault { get; }
 }

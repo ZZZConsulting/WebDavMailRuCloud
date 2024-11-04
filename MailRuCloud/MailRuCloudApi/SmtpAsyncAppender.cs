@@ -2,25 +2,24 @@
 using System.Threading.Tasks;
 using log4net.Appender;
 
-namespace YaR.Clouds
+namespace YaR.Clouds;
+
+// ReSharper disable once UnusedType.Global
+public class SmtpAsyncAppender : SmtpAppender
 {
-    // ReSharper disable once UnusedType.Global
-    public class SmtpAsyncAppender : SmtpAppender
+    protected override void SendEmail(string messageBody)
     {
-        protected override void SendEmail(string messageBody)
+        Task.Run(() =>
         {
-            Task.Run(() =>
+            try
             {
-                try
-                {
-                    base.SendEmail(messageBody);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
-            });
-        }
+                base.SendEmail(messageBody);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        });
     }
 }

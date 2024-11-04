@@ -1,7 +1,6 @@
-﻿namespace YaR.Clouds
+﻿namespace YaR.Clouds;
+
+public interface ITwoFaHandler
 {
-    public interface ITwoFaHandler
-    {
-        string Get(string login, bool isAutoRelogin);
-    }
+    string Get(string login, bool isAutoRelogin);
 }

@@ -1,13 +1,12 @@
 ﻿using Newtonsoft.Json;
 
-namespace YaR.Clouds.Base.Requests.Types
+namespace YaR.Clouds.Base.Requests.Types;
+
+class AuthTokenRequestResult : CommonOperationResult<AuthTokenRequestResult.AuthTokenResultBody>
 {
-    class AuthTokenRequestResult : CommonOperationResult<AuthTokenRequestResult.AuthTokenResultBody>
+    public class AuthTokenResultBody
     {
-        public class AuthTokenResultBody
-        {
-            [JsonProperty("token")]
-            public string Token { get; set; }
-        }
+        [JsonProperty("token")]
+        public string Token { get; set; }
     }
 }

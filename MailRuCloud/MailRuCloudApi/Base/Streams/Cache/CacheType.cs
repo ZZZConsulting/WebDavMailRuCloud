@@ -1,8 +1,7 @@
-﻿namespace YaR.Clouds.Base.Streams.Cache
+﻿namespace YaR.Clouds.Base.Streams.Cache;
+
+public enum CacheType
 {
-    public enum CacheType
-    {
-        Memory = 0,
-        Disk = 1
-    }
+    Memory = 0,
+    Disk = 1
 }

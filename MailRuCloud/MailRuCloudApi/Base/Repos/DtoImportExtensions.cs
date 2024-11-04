@@ -8,158 +8,157 @@ using YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests.Types;
 using YaR.Clouds.Base.Requests.Types;
 using YaR.Clouds.Extensions;
 
-namespace YaR.Clouds.Base.Repos
+namespace YaR.Clouds.Base.Repos;
+
+internal static class DtoImportExtensions
 {
-    internal static class DtoImportExtensions
+    internal static IEntry ToEntry(this ListRequest.Result data)
     {
-        internal static IEntry ToEntry(this ListRequest.Result data)
-	    {
-			Cloud.ItemType itemType = data.Item is FsFile ? Cloud.ItemType.File : Cloud.ItemType.Folder;
+        Cloud.ItemType itemType = data.Item is FsFile ? Cloud.ItemType.File : Cloud.ItemType.Folder;
 
-		    var entry = itemType == Cloud.ItemType.File
-			    ? (IEntry)data.ToFile()
-			    : (IEntry)data.ToFolder();
+        var entry = itemType == Cloud.ItemType.File
+            ? (IEntry)data.ToFile()
+            : (IEntry)data.ToFolder();
 
-		    return entry;
-		}
+        return entry;
+    }
 
-        internal static File ToFile(this ListRequest.Result data)
-	    {
-		    var source = data.Item as FsFile;
-		    var res = source.ToFile();//new File(data.FullPath, (long)source.Size, source.Sha1.ToHexString());
-		    return res;
-	    }
+    internal static File ToFile(this ListRequest.Result data)
+    {
+        var source = data.Item as FsFile;
+        var res = source.ToFile();//new File(data.FullPath, (long)source.Size, source.Sha1.ToHexString());
+        return res;
+    }
 
-        internal static File ToFile(this FsFile data)
-		{
-		    var res = new File(data.FullPath, (long) data.Size, new FileHashMrc(data.Sha1.ToHexString()))
-		    {
-                CreationTimeUtc = data.ModifDate,
-                LastAccessTimeUtc = data.ModifDate,
-                LastWriteTimeUtc = data.ModifDate //TODO: this is the main time (
-            };
-			return res;
-		}
-
-		internal static IEnumerable<File> ToGroupedFiles(this IEnumerable<File> list)
-		{
-			var groupedFiles = list
-				.GroupBy(f => f.ServiceInfo.CleanName,
-					file => file)
-                //TODO: DIRTY: if group contains header file, than make SplittedFile, else do not group
-                .SelectMany(group => group.Count() == 1
-					? group.Take(1)
-					: group.Any(f => f.Name == f.ServiceInfo.CleanName)
-						? Enumerable.Repeat(new SplittedFile(group.ToList()), 1)
-						: group.Select(file => file));
-
-			return groupedFiles;
-		}
-
-        internal static Folder ToFolder(this ListRequest.Result data)
-	    {
-		    var res = (data.Item as FsFolder)?.ToFolder();
-		    return res;
-	    }
-
-        internal static Folder ToFolder(this FsFolder data)
+    internal static File ToFile(this FsFile data)
+    {
+        var res = new File(data.FullPath, (long)data.Size, new FileHashMrc(data.Sha1.ToHexString()))
         {
-            var folder = new Folder((long)data.Size, data.FullPath) { IsChildrenLoaded = data.IsChildrenLoaded };
+            CreationTimeUtc = data.ModifDate,
+            LastAccessTimeUtc = data.ModifDate,
+            LastWriteTimeUtc = data.ModifDate //TODO: this is the main time (
+        };
+        return res;
+    }
 
-            var children = new List<IEntry>();
-            children.AddRange(
-                data.Items
-                    .OfType<FsFile>()
-                    .Select(f => f.ToFile())
-                    .ToGroupedFiles());
+    internal static IEnumerable<File> ToGroupedFiles(this IEnumerable<File> list)
+    {
+        var groupedFiles = list
+            .GroupBy(f => f.ServiceInfo.CleanName,
+                file => file)
+        //TODO: DIRTY: if group contains header file, than make SplittedFile, else do not group
+        .SelectMany(group => group.Count() == 1
+                ? group.Take(1)
+                : group.Any(f => f.Name == f.ServiceInfo.CleanName)
+                    ? Enumerable.Repeat(new SplittedFile(group.ToList()), 1)
+                    : group.Select(file => file));
 
-            children.AddRange(
-                data.Items
-                    .OfType<FsFolder>()
-                    .Select(f => f.ToFolder()));
+        return groupedFiles;
+    }
 
-            folder.Descendants = folder.Descendants.AddRange(children);
+    internal static Folder ToFolder(this ListRequest.Result data)
+    {
+        var res = (data.Item as FsFolder)?.ToFolder();
+        return res;
+    }
 
-            return folder;
-        }
+    internal static Folder ToFolder(this FsFolder data)
+    {
+        var folder = new Folder((long)data.Size, data.FullPath) { IsChildrenLoaded = data.IsChildrenLoaded };
+
+        var children = new List<IEntry>();
+        children.AddRange(
+            data.Items
+                .OfType<FsFile>()
+                .Select(f => f.ToFile())
+                .ToGroupedFiles());
+
+        children.AddRange(
+            data.Items
+                .OfType<FsFolder>()
+                .Select(f => f.ToFolder()));
+
+        folder.Descendants = folder.Descendants.AddRange(children);
+
+        return folder;
+    }
 
 
 
 
 
 
-        internal static CopyResult ToCopyResult(this MoveRequest.Result data, string newName)
+    internal static CopyResult ToCopyResult(this MoveRequest.Result data, string newName)
+    {
+        var res = new CopyResult
         {
-            var res = new CopyResult
-            {
-                IsSuccess = true,
-                NewName = newName
-            };
-            return res;
-        }
+            IsSuccess = true,
+            NewName = newName
+        };
+        return res;
+    }
 
-        internal static RenameResult ToRenameResult(this MoveRequest.Result data)
+    internal static RenameResult ToRenameResult(this MoveRequest.Result data)
+    {
+        var res = new RenameResult
         {
-            var res = new RenameResult
-            {
-                IsSuccess = true
-            };
-            return res;
-        }
+            IsSuccess = true
+        };
+        return res;
+    }
 
-        internal static AddFileResult ToAddFileResult(this MobAddFileRequest.Result data)
+    internal static AddFileResult ToAddFileResult(this MobAddFileRequest.Result data)
+    {
+        var res = new AddFileResult
         {
-            var res = new AddFileResult
-            {
-                Success = data.IsSuccess,
-                Path = data.Path
-            };
-            return res;
-        }
+            Success = data.IsSuccess,
+            Path = data.Path
+        };
+        return res;
+    }
 
 
-        internal static AuthTokenResult ToAuthTokenResult(this OAuthRefreshRequest.Result data, string refreshToken)
+    internal static AuthTokenResult ToAuthTokenResult(this OAuthRefreshRequest.Result data, string refreshToken)
+    {
+        if (data.ErrorCode > 0)
+            throw new Exception($"OAuth: Error Code={data.ErrorCode}, Value={data.Error}, Description={data.ErrorDescription}");
+
+        var res = new AuthTokenResult
         {
-            if (data.ErrorCode > 0)
-                throw new Exception($"OAuth: Error Code={data.ErrorCode}, Value={data.Error}, Description={data.ErrorDescription}");
+            IsSuccess = true,
+            Token = data.AccessToken,
+            ExpiresIn = TimeSpan.FromSeconds(data.ExpiresIn),
+            RefreshToken = refreshToken
+        };
 
-            var res = new AuthTokenResult
-            {
-                IsSuccess = true,
-                Token = data.AccessToken,
-                ExpiresIn = TimeSpan.FromSeconds(data.ExpiresIn),
-                RefreshToken = refreshToken
-            };
+        return res;
+    }
 
-            return res;
-        }
+    internal static AuthTokenResult ToAuthTokenResult(this OAuthRequest.Result data)
+    {
+        if (data.ErrorCode > 0 && data.ErrorCode != 15)
+            throw new AuthenticationException($"OAuth: Error Code={data.ErrorCode}, Value={data.Error}, Description={data.ErrorDescription}");
 
-        internal static AuthTokenResult ToAuthTokenResult(this OAuthRequest.Result data)
+        var res = new AuthTokenResult
         {
-            if (data.ErrorCode > 0 && data.ErrorCode != 15)
-                throw new AuthenticationException($"OAuth: Error Code={data.ErrorCode}, Value={data.Error}, Description={data.ErrorDescription}");
+            IsSuccess = true,
+            Token = data.AccessToken,
+            ExpiresIn = TimeSpan.FromSeconds(data.ExpiresIn),
+            RefreshToken = data.RefreshToken,
+            IsSecondStepRequired = data.ErrorCode == 15,
+            TsaToken = data.TsaToken
+        };
 
-            var res = new AuthTokenResult
-            {
-                IsSuccess = true,
-                Token = data.AccessToken,
-                ExpiresIn = TimeSpan.FromSeconds(data.ExpiresIn),
-                RefreshToken = data.RefreshToken,
-                IsSecondStepRequired = data.ErrorCode == 15,
-                TsaToken = data.TsaToken
-            };
+        return res;
+    }
 
-            return res;
-        }
-
-        internal static CreateFolderResult ToCreateFolderResult(this CreateFolderRequest.Result data)
+    internal static CreateFolderResult ToCreateFolderResult(this CreateFolderRequest.Result data)
+    {
+        var res = new CreateFolderResult
         {
-            var res = new CreateFolderResult
-            {
-                IsSuccess = data.OperationResult == OperationResult.Ok,
-                Path = data.Path
-            };
-            return res;
-        }
+            IsSuccess = data.OperationResult == OperationResult.Ok,
+            Path = data.Path
+        };
+        return res;
     }
 }

@@ -3,24 +3,23 @@ using System.Text;
 using YaR.Clouds.Base.Requests;
 using YaR.Clouds.Base.Requests.Types;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests;
+
+class UnpublishRequest : BaseRequestJson<CommonOperationResult<string>>
 {
-    class UnpublishRequest : BaseRequestJson<CommonOperationResult<string>>
+    private readonly string _publicLink;
+
+    public UnpublishRequest(HttpCommonSettings settings, IAuth auth, string publicLink) : base(settings, auth)
     {
-        private readonly string _publicLink;
+        _publicLink = publicLink;
+    }
 
-        public UnpublishRequest(HttpCommonSettings settings, IAuth auth, string publicLink) : base(settings, auth)
-        {
-            _publicLink = publicLink;
-        }
+    protected override string RelationalUri => "/api/v2/file/unpublish";
 
-        protected override string RelationalUri => "/api/v2/file/unpublish";
-
-        protected override byte[] CreateHttpContent()
-        {
-            var data = string.Format("weblink={0}&api={1}&token={2}&email={3}&x-email={3}", Uri.EscapeDataString(_publicLink),
-                2, _auth.AccessToken, _auth.Login);
-            return Encoding.UTF8.GetBytes(data);
-        }
+    protected override byte[] CreateHttpContent()
+    {
+        var data = string.Format("weblink={0}&api={1}&token={2}&email={3}&x-email={3}", Uri.EscapeDataString(_publicLink),
+            2, _auth.AccessToken, _auth.Login);
+        return Encoding.UTF8.GetBytes(data);
     }
 }

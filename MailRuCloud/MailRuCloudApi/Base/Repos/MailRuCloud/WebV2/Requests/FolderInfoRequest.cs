@@ -2,45 +2,44 @@
 using YaR.Clouds.Base.Requests;
 using YaR.Clouds.Base.Requests.Types;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests;
+
+internal class FolderInfoRequest : BaseRequestJson<FolderInfoResult>
 {
-    internal class FolderInfoRequest : BaseRequestJson<FolderInfoResult>
+    private readonly string _path;
+    private readonly bool _isWebLink;
+    private readonly int _offset;
+    private readonly int _limit;
+
+    public FolderInfoRequest(HttpCommonSettings settings, IAuth auth, RemotePath path, int offset = 0, int limit = int.MaxValue)
+        : base(settings, auth)
     {
-        private readonly string _path;
-        private readonly bool _isWebLink;
-        private readonly int _offset;
-        private readonly int _limit;
+        _isWebLink = path.IsLink;
 
-        public FolderInfoRequest(HttpCommonSettings settings, IAuth auth, RemotePath path, int offset = 0, int limit = int.MaxValue)
-            : base(settings, auth)
+        if (path.IsLink)
         {
-            _isWebLink = path.IsLink;
-
-            if (path.IsLink)
-            {
-                string ustr = path.Link.Href.OriginalString;
-                _path = "/" + ustr.Remove(0, ustr.IndexOf("/public/", StringComparison.Ordinal) + "/public/".Length);
-            }
-            else
-                _path = path.Path;
-
-            _offset = offset;
-            _limit = limit;
+            string ustr = path.Link.Href.OriginalString;
+            _path = "/" + ustr.Remove(0, ustr.IndexOf("/public/", StringComparison.Ordinal) + "/public/".Length);
         }
+        else
+            _path = path.Path;
 
-        protected override string RelationalUri
+        _offset = offset;
+        _limit = limit;
+    }
+
+    protected override string RelationalUri
+    {
+        get
         {
-            get
-            {
-                var uri = _isWebLink
-                    ? $"/api/v2/folder?weblink={Uri.EscapeDataString(_path)}&offset={_offset}&limit={_limit}"
-                    : $"/api/v2/folder?home={Uri.EscapeDataString(_path)}&offset={_offset}&limit={_limit}";
+            var uri = _isWebLink
+                ? $"/api/v2/folder?weblink={Uri.EscapeDataString(_path)}&offset={_offset}&limit={_limit}"
+                : $"/api/v2/folder?home={Uri.EscapeDataString(_path)}&offset={_offset}&limit={_limit}";
 
-                if (!_auth.IsAnonymous)
-                    uri += $"&token={_auth.AccessToken}";
+            if (!_auth.IsAnonymous)
+                uri += $"&token={_auth.AccessToken}";
 
-                return uri;
-            }
+            return uri;
         }
     }
 }

@@ -1,23 +1,22 @@
 ﻿using YaR.Clouds.Base.Requests;
 using YaR.Clouds.Base.Requests.Types;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.WebM1.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.WebM1.Requests;
+
+class SharedListRequest : BaseRequestJson<FolderInfoResult>
 {
-    class SharedListRequest : BaseRequestJson<FolderInfoResult>
+
+    public SharedListRequest(HttpCommonSettings settings, IAuth auth)
+        : base(settings, auth)
     {
+    }
 
-        public SharedListRequest(HttpCommonSettings settings, IAuth auth)
-            : base(settings, auth)
+    protected override string RelationalUri
+    {
+        get
         {
-        }
-
-        protected override string RelationalUri
-        {
-            get
-            {
-                var uri = $"/api/m1/folder/shared/links?access_token={_auth.AccessToken}";
-                return uri;
-            }
+            var uri = $"/api/m1/folder/shared/links?access_token={_auth.AccessToken}";
+            return uri;
         }
     }
 }

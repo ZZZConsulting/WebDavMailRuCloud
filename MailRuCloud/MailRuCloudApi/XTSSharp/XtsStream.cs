@@ -26,35 +26,34 @@
 
 using System.IO;
 
-namespace YaR.Clouds.XTSSharp
+namespace YaR.Clouds.XTSSharp;
+
+/// <summary>
+/// A random access, xts encrypted stream
+/// </summary>
+public class XtsStream : RandomAccessSectorStream
 {
-	/// <summary>
-	/// A random access, xts encrypted stream
-	/// </summary>
-	public class XtsStream : RandomAccessSectorStream
-	{
-        /// <summary>
-		/// Creates a new stream
-		/// </summary>
-		/// <param name="baseStream">The base stream</param>
-		/// <param name="xts">Xts implementation to use</param>
-		/// <param name="sectorSize">Sector size</param>
-		public XtsStream(Stream baseStream, Xts xts, int sectorSize = XtsSectorStream.DefaultSectorSize)
-			: base(new XtsSectorStream(baseStream, xts, sectorSize), true)
-		{
-		}
+    /// <summary>
+    /// Creates a new stream
+    /// </summary>
+    /// <param name="baseStream">The base stream</param>
+    /// <param name="xts">Xts implementation to use</param>
+    /// <param name="sectorSize">Sector size</param>
+    public XtsStream(Stream baseStream, Xts xts, int sectorSize = XtsSectorStream.DefaultSectorSize)
+        : base(new XtsSectorStream(baseStream, xts, sectorSize), true)
+    {
+    }
 
 
-		/// <summary>
-		/// Creates a new stream
-		/// </summary>
-		/// <param name="baseStream">The base stream</param>
-		/// <param name="xts">Xts implementation to use</param>
-		/// <param name="sectorSize">Sector size</param>
-		/// <param name="offset">Offset to start counting sectors</param>
-		public XtsStream(Stream baseStream, Xts xts, int sectorSize, long offset)
-			: base(new XtsSectorStream(baseStream, xts, sectorSize, offset), true)
-		{
-		}
-	}
+    /// <summary>
+    /// Creates a new stream
+    /// </summary>
+    /// <param name="baseStream">The base stream</param>
+    /// <param name="xts">Xts implementation to use</param>
+    /// <param name="sectorSize">Sector size</param>
+    /// <param name="offset">Offset to start counting sectors</param>
+    public XtsStream(Stream baseStream, Xts xts, int sectorSize, long offset)
+        : base(new XtsSectorStream(baseStream, xts, sectorSize, offset), true)
+    {
+    }
 }

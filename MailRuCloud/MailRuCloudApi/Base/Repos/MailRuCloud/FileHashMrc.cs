@@ -1,32 +1,31 @@
 ﻿using System;
 using YaR.Clouds.Extensions;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud
+namespace YaR.Clouds.Base.Repos.MailRuCloud;
+
+readonly struct FileHashMrc : IFileHash
 {
-    readonly struct FileHashMrc : IFileHash
+    public FileHashMrc(string value)
     {
-        public FileHashMrc(string value)
-        {
-            Hash = new Hash(FileHashType.Mrc, value);
-        }
+        Hash = new Hash(FileHashType.Mrc, value);
+    }
 
-        public FileHashMrc(byte[] value) : this(value.ToHexString())
-        {
-        }
+    public FileHashMrc(byte[] value) : this(value.ToHexString())
+    {
+    }
 
-        public Hash Get(FileHashType htype)
-        {
-            if (htype != FileHashType.Mrc)
-                throw new ArgumentException($"Mail.ru Cloud supportd only {FileHashType.Mrc} hash type");
+    public Hash Get(FileHashType htype)
+    {
+        if (htype != FileHashType.Mrc)
+            throw new ArgumentException($"Mail.ru Cloud supportd only {FileHashType.Mrc} hash type");
 
-            return Hash;
-        }
+        return Hash;
+    }
 
-        public Hash Hash { get; }
+    public Hash Hash { get; }
 
-        public override string ToString()
-        {
-            return $"{FileHashType.Mrc}={Hash.Value}";
-        }
+    public override string ToString()
+    {
+        return $"{FileHashType.Mrc}={Hash.Value}";
     }
 }

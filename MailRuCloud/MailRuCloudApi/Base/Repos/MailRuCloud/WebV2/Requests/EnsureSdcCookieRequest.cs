@@ -1,22 +1,21 @@
 ﻿using System.Net;
 using YaR.Clouds.Base.Requests;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.WebV2.Requests;
+
+class EnsureSdcCookieRequest : BaseRequestString
 {
-    class EnsureSdcCookieRequest : BaseRequestString
+    public EnsureSdcCookieRequest(HttpCommonSettings settings, IAuth auth)
+        : base(settings, auth)
     {
-        public EnsureSdcCookieRequest(HttpCommonSettings settings, IAuth auth)
-            : base(settings, auth)
-        {
-        }
-
-        protected override HttpWebRequest CreateRequest(string baseDomain = null)
-        {
-            var request = base.CreateRequest(CommonSettings.AuthDomain);
-            request.Accept = CommonSettings.DefaultAcceptType;
-            return request;
-        }
-
-        protected override string RelationalUri => $"/sdc?from={_settings.BaseDomain}/home";
     }
+
+    protected override HttpWebRequest CreateRequest(string baseDomain = null)
+    {
+        var request = base.CreateRequest(CommonSettings.AuthDomain);
+        request.Accept = CommonSettings.DefaultAcceptType;
+        return request;
+    }
+
+    protected override string RelationalUri => $"/sdc?from={_settings.BaseDomain}/home";
 }

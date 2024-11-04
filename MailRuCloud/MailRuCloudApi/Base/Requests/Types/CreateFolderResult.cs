@@ -1,8 +1,7 @@
-﻿namespace YaR.Clouds.Base.Requests.Types
+﻿namespace YaR.Clouds.Base.Requests.Types;
+
+public class CreateFolderResult
 {
-    public class CreateFolderResult
-    {
-        public bool IsSuccess { get; set; }
-        public string Path{ get; set; }
-    }
+    public bool IsSuccess { get; set; }
+    public string Path{ get; set; }
 }

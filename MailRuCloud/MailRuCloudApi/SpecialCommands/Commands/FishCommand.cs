@@ -6,79 +6,78 @@ using System.Threading.Tasks;
 using YaR.Clouds.Base;
 using YaR.Clouds.Base.Repos.MailRuCloud;
 
-namespace YaR.Clouds.SpecialCommands.Commands
+namespace YaR.Clouds.SpecialCommands.Commands;
+
+/// <summary>
+/// Join random file from cloud. If you got it - you are biggest f@kn lucker of Universe!
+/// </summary>
+public class FishCommand : SpecialCommand
 {
-    /// <summary>
-    /// Join random file from cloud. If you got it - you are biggest f@kn lucker of Universe!
-    /// </summary>
-    public class FishCommand : SpecialCommand
+    private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(FishCommand));
+
+    public FishCommand(Cloud cloud, string path, IList<string> parameters) : base(cloud, path, parameters)
     {
-        private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(FishCommand));
+    }
 
-        public FishCommand(Cloud cloud, string path, IList<string> parameters) : base(cloud, path, parameters)
+    protected override MinMax<int> MinMaxParamsCount { get; } = new(0);
+
+    private static readonly Random Random = new();
+
+    public override async Task<SpecialCommandResult> Execute()
+    {
+        const string name = "FISHA.YEA";
+        string target = WebDavPath.Combine(_path, name);
+
+        var randomHash = new byte[20];
+        Random.NextBytes(randomHash);
+
+        long randomSize = Random.Next(21, int.MaxValue);
+
+        try
         {
+            //var res = await new CreateFileRequest(Cloud.CloudApi, target, strRandomHash, randomSize, ConflictResolver.Rename).MakeRequestAsync(_connectionLimiter);
+            var hash = new FileHashMrc(randomHash);
+            var res = await _cloud.RequestRepo.AddFile(target, hash, randomSize, DateTime.Now, ConflictResolver.Rename);
+            if (res.Success)
+            {
+                Logger.Warn("╔╗╔╗╔╦══╦╗╔╗╔╗╔╦╦╗");
+                Logger.Warn("║║║║║║╔╗║║║║║║║║║║");
+                Logger.Warn("║║║║║║║║║║║║║║║║║║");
+                Logger.Warn("║║║║║║║║║║║║║║╚╩╩╝");
+                Logger.Warn("║╚╝╚╝║╚╝║╚╝╚╝║╔╦╦╗");
+                Logger.Warn("╚═╝╚═╩══╩═╝╚═╝╚╩╩╝");
+                Logger.Warn("");
+                Logger.Warn("¦̵̱ ̵̱ ̵̱ ̵̱ ̵̱(̢ ̡͇̅└͇̅┘͇̅ (▤8כ−◦");
+
+            }
         }
-
-        protected override MinMax<int> MinMaxParamsCount { get; } = new(0);
-
-        private static readonly Random Random = new();
-
-        public override async Task<SpecialCommandResult> Execute()
+        catch (Exception)
         {
-            const string name = "FISHA.YEA";
-            string target = WebDavPath.Combine(_path, name);
-
-            var randomHash = new byte[20];
-            Random.NextBytes(randomHash);
-
-            long randomSize = Random.Next(21, int.MaxValue);
-
+            string content = string.Empty;
             try
             {
-                //var res = await new CreateFileRequest(Cloud.CloudApi, target, strRandomHash, randomSize, ConflictResolver.Rename).MakeRequestAsync(_connectionLimiter);
-                var hash = new FileHashMrc(randomHash);
-                var res = await _cloud.RequestRepo.AddFile(target, hash, randomSize, DateTime.Now,  ConflictResolver.Rename);
-                if (res.Success)
-                {
-                    Logger.Warn("╔╗╔╗╔╦══╦╗╔╗╔╗╔╦╦╗");
-                    Logger.Warn("║║║║║║╔╗║║║║║║║║║║");
-                    Logger.Warn("║║║║║║║║║║║║║║║║║║");
-                    Logger.Warn("║║║║║║║║║║║║║║╚╩╩╝");
-                    Logger.Warn("║╚╝╚╝║╚╝║╚╝╚╝║╔╦╦╗");
-                    Logger.Warn("╚═╝╚═╩══╩═╝╚═╝╚╩╩╝");
-                    Logger.Warn("");
-                    Logger.Warn("¦̵̱ ̵̱ ̵̱ ̵̱ ̵̱(̢ ̡͇̅└͇̅┘͇̅ (▤8כ−◦");
-
-                }
+                // Replace obsolete methods
+                //using WebClient client = new WebClient();
+                //string htmlCode = client.DownloadString("http://www.smartphrase.com/cgi-bin/randomphrase.cgi?spanish&humorous&normal&15&2&12&16&1&5");
+                using HttpClient client = new HttpClient();
+                HttpResponseMessage response = await client.GetAsync("http://www.smartphrase.com/cgi-bin/randomphrase.cgi?spanish&humorous&normal&15&2&12&16&1&5");
+                response.EnsureSuccessStatusCode();
+                string htmlCode = await response.Content.ReadAsStringAsync();
+                content = Regex.Match(htmlCode,
+                        @"</FORM>\s*</TD>\s*<TD\s*ALIGN=""center""\s*WIDTH=\d+\s*BGCOLOR="".DCDCFF""\s*>\s*(?<phrase>.*?)<P>\s*(?<phraseeng>.*?)\s*<P>")
+                    .Groups["phraseeng"].Value;
             }
             catch (Exception)
             {
-                string content = string.Empty;
-                try
-                {
-                    // Replace obsolete methods
-                    //using WebClient client = new WebClient();
-                    //string htmlCode = client.DownloadString("http://www.smartphrase.com/cgi-bin/randomphrase.cgi?spanish&humorous&normal&15&2&12&16&1&5");
-                    using HttpClient client = new HttpClient();
-                    HttpResponseMessage response = await client.GetAsync("http://www.smartphrase.com/cgi-bin/randomphrase.cgi?spanish&humorous&normal&15&2&12&16&1&5");
-                    response.EnsureSuccessStatusCode();
-                    string htmlCode = await response.Content.ReadAsStringAsync();
-                    content = Regex.Match(htmlCode,
-                            @"</FORM>\s*</TD>\s*<TD\s*ALIGN=""center""\s*WIDTH=\d+\s*BGCOLOR="".DCDCFF""\s*>\s*(?<phrase>.*?)<P>\s*(?<phraseeng>.*?)\s*<P>")
-                        .Groups["phraseeng"].Value;
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-                if (string.IsNullOrEmpty(content))
-                    content = @"Maybe next time ¯\_(ツ)_/¯";
-
-                _cloud.UploadFile(WebDavPath.Combine(_path, $"{DateTime.Now:yyyy-MM-dd hh-mm-ss} Not today, dude.txt"), content);
+                // ignored
             }
+            if (string.IsNullOrEmpty(content))
+                content = @"Maybe next time ¯\_(ツ)_/¯";
 
-            return SpecialCommandResult.Success;
-
+            _cloud.UploadFile(WebDavPath.Combine(_path, $"{DateTime.Now:yyyy-MM-dd hh-mm-ss} Not today, dude.txt"), content);
         }
+
+        return SpecialCommandResult.Success;
+
     }
 }

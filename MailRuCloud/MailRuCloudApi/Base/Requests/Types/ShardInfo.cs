@@ -1,26 +1,25 @@
-﻿namespace YaR.Clouds.Base.Requests.Types
+﻿namespace YaR.Clouds.Base.Requests.Types;
+
+/// <summary>
+/// Servers info class.
+/// </summary>
+public class ShardInfo
 {
     /// <summary>
-    /// Servers info class.
+    /// Gets or sets shard type.
     /// </summary>
-    public class ShardInfo
-    {
-        /// <summary>
-        /// Gets or sets shard type.
-        /// </summary>
-        /// <value>Shard type.</value>
-        public ShardType Type { get; internal set; }
+    /// <value>Shard type.</value>
+    public ShardType Type { get; internal set; }
 
-        /// <summary>
-        /// Gets or sets number of the shards.
-        /// </summary>
-        /// <value>Number of the shards.</value>
-        public int Count { get; internal set; }
+    /// <summary>
+    /// Gets or sets number of the shards.
+    /// </summary>
+    /// <value>Number of the shards.</value>
+    public int Count { get; internal set; }
 
-        /// <summary>
-        /// Gets or sets shard link.
-        /// </summary>
-        /// <value>Shard link.</value>
-        public string Url { get; internal set; }
-    }
+    /// <summary>
+    /// Gets or sets shard link.
+    /// </summary>
+    /// <value>Shard link.</value>
+    public string Url { get; internal set; }
 }

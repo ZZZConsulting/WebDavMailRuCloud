@@ -1,16 +1,15 @@
 ﻿using System;
 using System.IO;
 
-namespace YaR.Clouds.Base.Repos
+namespace YaR.Clouds.Base.Repos;
+
+public interface ICloudHasher : IDisposable
 {
-    public interface ICloudHasher : IDisposable
-    {
-        string Name { get; }
+    string Name { get; }
 
-        void Append(byte[] buffer, int offset, int count);
-        void Append(Stream stream);
+    void Append(byte[] buffer, int offset, int count);
+    void Append(Stream stream);
 
-        IFileHash Hash { get; }
-        long Length { get; }
-    }
+    IFileHash Hash { get; }
+    long Length { get; }
 }

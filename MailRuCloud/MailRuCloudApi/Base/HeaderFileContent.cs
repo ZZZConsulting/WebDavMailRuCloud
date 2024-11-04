@@ -1,12 +1,11 @@
 ﻿using System;
 
-namespace YaR.Clouds.Base
+namespace YaR.Clouds.Base;
+
+public class HeaderFileContent
 {
-    public class HeaderFileContent
-    {
-        public string Name { get; set; }
-        public long Size { get; set; }
-        public CryptoKeyInfo PublicKey { get; set; }
-        public DateTime CreationDate { get; set; }
-    }
+    public string Name { get; set; }
+    public long Size { get; set; }
+    public CryptoKeyInfo PublicKey { get; set; }
+    public DateTime CreationDate { get; set; }
 }

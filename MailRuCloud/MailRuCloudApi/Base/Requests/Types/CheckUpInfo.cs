@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models;
 
@@ -170,7 +169,7 @@ public class JournalCounters
 
     public void TakeMax(JournalCounters src)
     {
-        if(RemoveCounter<src.RemoveCounter)
+        if (RemoveCounter < src.RemoveCounter)
             Interlocked.Exchange(ref RemoveCounter, src.RemoveCounter);
         if (RenameCounter < src.RenameCounter)
             Interlocked.Exchange(ref RenameCounter, src.RenameCounter);
@@ -195,4 +194,4 @@ public class JournalCounters
         if (TrashDropAllCounter < src.TrashDropAllCounter)
             Interlocked.Exchange(ref TrashDropAllCounter, src.TrashDropAllCounter);
     }
-};
+}

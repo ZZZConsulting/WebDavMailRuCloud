@@ -1,15 +1,14 @@
-﻿namespace YaR.Clouds.Base.Requests.Types
+﻿namespace YaR.Clouds.Base.Requests.Types;
+
+public class AccountInfoResult
 {
-    public class AccountInfoResult
+    private long _fileSizeLimit;
+
+    public long FileSizeLimit
     {
-        private long _fileSizeLimit;
-
-        public long FileSizeLimit
-        {
-            get => _fileSizeLimit <= 0 ? long.MaxValue : _fileSizeLimit;
-            set => _fileSizeLimit = value;
-        }
-
-        public DiskUsage DiskUsage { get; set; }
+        get => _fileSizeLimit <= 0 ? long.MaxValue : _fileSizeLimit;
+        set => _fileSizeLimit = value;
     }
+
+    public DiskUsage DiskUsage { get; set; }
 }

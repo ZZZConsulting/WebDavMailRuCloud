@@ -2,20 +2,19 @@
 using YaR.Clouds.Base.Requests;
 using YaR.Clouds.Base.Requests.Types;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.WebM1.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.WebM1.Requests;
+
+class CloneItemRequest : BaseRequestJson<CommonOperationResult<string>>
 {
-    class CloneItemRequest : BaseRequestJson<CommonOperationResult<string>>
+    private readonly string _fromUrl;
+    private readonly string _toPath;
+
+    public CloneItemRequest(HttpCommonSettings settings, IAuth auth, string fromUrl, string toPath)
+        : base(settings, auth)
     {
-        private readonly string _fromUrl;
-        private readonly string _toPath;
-
-        public CloneItemRequest(HttpCommonSettings settings, IAuth auth, string fromUrl, string toPath)
-            : base(settings, auth)
-        {
-            _fromUrl = fromUrl;
-            _toPath = toPath;
-        }
-
-        protected override string RelationalUri => $"{_settings.BaseDomain}/api/m1/clone?conflict=rename&folder={Uri.EscapeDataString(_toPath)}&weblink={Uri.EscapeDataString(_fromUrl)}&access_token={_auth.AccessToken}";
+        _fromUrl = fromUrl;
+        _toPath = toPath;
     }
+
+    protected override string RelationalUri => $"{_settings.BaseDomain}/api/m1/clone?conflict=rename&folder={Uri.EscapeDataString(_toPath)}&weblink={Uri.EscapeDataString(_fromUrl)}&access_token={_auth.AccessToken}";
 }

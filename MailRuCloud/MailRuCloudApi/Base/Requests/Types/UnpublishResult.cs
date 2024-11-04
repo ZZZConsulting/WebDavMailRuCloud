@@ -1,7 +1,6 @@
-﻿namespace YaR.Clouds.Base.Requests.Types
+﻿namespace YaR.Clouds.Base.Requests.Types;
+
+public class UnpublishResult
 {
-    public class UnpublishResult
-    {
-        public bool IsSuccess { get; set; }
-    }
+    public bool IsSuccess { get; set; }
 }

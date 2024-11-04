@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace YaR.Clouds.Links.Dto
+namespace YaR.Clouds.Links.Dto;
+
+public class ItemList
 {
-    public class ItemList
-    {
-        public List<ItemLink> Items { get; } = new();
-    }
+    public List<ItemLink> Items { get; } = [];
 }

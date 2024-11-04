@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Reflection;
 
-namespace YaR.Clouds
+namespace YaR.Clouds;
+
+public class CryptFileInfo
 {
-    public class CryptFileInfo
-    {
-        public const string FileName = ".crypt.wdmrc";
+    public const string FileName = ".crypt.wdmrc";
 
-        // ReSharper disable once UnusedMember.Global
-        public string WDMRCVersion => Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-                                      ?? throw new Exception($"{nameof(CryptFileInfo)}.{nameof(WDMRCVersion)} is empty");
+    // ReSharper disable once UnusedMember.Global
+    public string WDMRCVersion => Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+                                  ?? throw new Exception($"{nameof(CryptFileInfo)}.{nameof(WDMRCVersion)} is empty");
 
-        public DateTime Initialized { get; set; }
-    }
+    public DateTime Initialized { get; set; }
 }

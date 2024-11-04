@@ -2,42 +2,41 @@
 using YaR.Clouds.Base.Repos.MailRuCloud.WebBin;
 using YaR.Clouds.Base.Repos.MailRuCloud.WebV2;
 
-namespace YaR.Clouds.Base.Repos
+namespace YaR.Clouds.Base.Repos;
+
+public class RepoFabric
 {
-    public class RepoFabric
+    private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(RepoFabric));
+
+    private readonly CloudSettings _settings;
+    private readonly Credentials _credentials;
+
+    public RepoFabric(CloudSettings settings, Credentials credentials)
     {
-        private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(RepoFabric));
+        _settings = settings;
+        _credentials = credentials;
+    }
 
-        private readonly CloudSettings _settings;
-        private readonly Credentials _credentials;
-
-        public RepoFabric(CloudSettings settings, Credentials credentials)
+    public IRequestRepo Create()
+    {
+        string TwoFaHandler(string login, bool isAutoRelogin)
         {
-            _settings = settings;
-            _credentials = credentials;
+            Logger.Info($"Waiting 2FA code for {login}");
+            var code = _settings.TwoFaHandler?.Get(login, isAutoRelogin);
+            Logger.Info($"Got 2FA code for {login}");
+            return code;
         }
 
-        public IRequestRepo Create()
+        IRequestRepo repo = _credentials.Protocol switch
         {
-            string TwoFaHandler(string login, bool isAutoRelogin)
-            {
-                Logger.Info($"Waiting 2FA code for {login}");
-                var code = _settings.TwoFaHandler?.Get(login, isAutoRelogin);
-                Logger.Info($"Got 2FA code for {login}");
-                return code;
-            }
+            Protocol.YadWeb => _credentials.AuthenticationUsingBrowser
+                ? new YandexDisk.YadWeb.YadWebRequestRepo2(_settings, _settings.Proxy, _credentials)
+                : new YandexDisk.YadWeb.YadWebRequestRepo(_settings, _settings.Proxy, _credentials),
+            Protocol.WebM1Bin => new WebBinRequestRepo(_settings, _credentials, TwoFaHandler),
+            Protocol.WebV2 => new WebV2RequestRepo(_settings, _credentials, TwoFaHandler),
+            _ => throw new Exception("Unknown protocol")
+        };
 
-            IRequestRepo repo = _credentials.Protocol switch
-            {
-                Protocol.YadWeb => _credentials.AuthenticationUsingBrowser
-                    ? new YandexDisk.YadWeb.YadWebRequestRepo2(_settings, _settings.Proxy, _credentials)
-                    : new YandexDisk.YadWeb.YadWebRequestRepo(_settings, _settings.Proxy, _credentials),
-                Protocol.WebM1Bin => new WebBinRequestRepo(_settings, _credentials, TwoFaHandler),
-                Protocol.WebV2 => new WebV2RequestRepo(_settings, _credentials, TwoFaHandler),
-                _ => throw new Exception("Unknown protocol")
-            };
-
-            return repo;
-        }
+        return repo;
     }
 }

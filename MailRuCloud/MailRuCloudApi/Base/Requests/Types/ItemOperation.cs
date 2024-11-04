@@ -1,10 +1,9 @@
 ﻿using System;
 
-namespace YaR.Clouds.Base.Requests.Types
+namespace YaR.Clouds.Base.Requests.Types;
+
+public class ItemOperation
 {
-    public class ItemOperation
-    {
-        public DateTime DateTime { get; set; }
-        public string Path { get; set; }
-    }
+    public DateTime DateTime { get; set; }
+    public string Path { get; set; }
 }

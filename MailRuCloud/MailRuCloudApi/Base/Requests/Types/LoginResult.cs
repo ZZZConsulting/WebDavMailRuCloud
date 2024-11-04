@@ -1,7 +1,6 @@
-﻿namespace YaR.Clouds.Base.Requests.Types
+﻿namespace YaR.Clouds.Base.Requests.Types;
+
+class LoginResult
 {
-    class LoginResult
-    {
-        public string Csrf { get; set; }
-    }
+    public string Csrf { get; set; }
 }

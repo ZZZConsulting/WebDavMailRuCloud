@@ -1,9 +1,8 @@
-﻿namespace YaR.Clouds.Base.Streams
+﻿namespace YaR.Clouds.Base.Streams;
+
+internal class UploadStream : UploadStreamHttpClient
 {
-    internal class UploadStream : UploadStreamHttpClient
+    public UploadStream(string destinationPath, Cloud cloud, long size) : base(destinationPath, cloud, size)
     {
-        public UploadStream(string destinationPath, Cloud cloud, long size) : base(destinationPath, cloud, size)
-        {
-        }
     }
 }

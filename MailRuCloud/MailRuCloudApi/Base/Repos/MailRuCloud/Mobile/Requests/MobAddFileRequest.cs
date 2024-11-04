@@ -5,104 +5,103 @@ using YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests.Types;
 using YaR.Clouds.Base.Requests;
 using YaR.Clouds.Extensions;
 
-namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests
+namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests;
+
+class MobAddFileRequest : BaseRequestMobile<MobAddFileRequest.Result>
 {
-    class MobAddFileRequest : BaseRequestMobile<MobAddFileRequest.Result>
+    private readonly string _fullPath;
+    private readonly byte[] _hash;
+    private readonly long _size;
+    private readonly ConflictResolver _conflictResolver;
+    private readonly DateTime _dateTime;
+
+    public MobAddFileRequest(HttpCommonSettings settings, IAuth auth, string metaServer, string fullPath, byte[] hash, long size, DateTime? dateTime, ConflictResolver? conflict)
+        : base(settings, auth, metaServer)
     {
-        private readonly string _fullPath;
-        private readonly byte[] _hash;
-        private readonly long _size;
-        private readonly ConflictResolver _conflictResolver;
-        private readonly DateTime _dateTime;
+        _fullPath = fullPath;
+        _hash = hash ?? new byte[20]; // zero length file
+        _size = size;
+        _conflictResolver = conflict ?? ConflictResolver.Rewrite;
+        _dateTime = (dateTime ?? DateTime.Now).ToUniversalTime();
+    }
 
-        public MobAddFileRequest(HttpCommonSettings settings, IAuth auth, string metaServer, string fullPath, byte[] hash, long size, DateTime? dateTime, ConflictResolver? conflict)
-            : base(settings, auth, metaServer)
+    public MobAddFileRequest(HttpCommonSettings settings, IAuth auth, string metaServer, string fullPath, string hash, long size, DateTime? dateTime, ConflictResolver? conflict)
+        : this(settings, auth, metaServer, fullPath, hash?.HexStringToByteArray(), size, dateTime, conflict)
+    {
+    }
+
+    protected override byte[] CreateHttpContent()
+    {
+        using var stream = new RequestBodyStream();
+
+        stream.WritePu16((byte)Operation.AddFile);
+        stream.WritePu16(Revision);
+        stream.WriteString(_fullPath);
+        stream.WritePu64(_size);
+
+        stream.WritePu64(_dateTime.ToUnix());
+        stream.WritePu32(00);
+
+        stream.Write(_hash);
+
+        long mask = ConflictResolver.Rename == _conflictResolver  // 1 = overwrite, 55 = don't add if not changed, add with rename if changed
+            ? 55
+            : 1;
+        stream.WritePu32(mask);
+
+        if ((mask & 32) != 0)
         {
-            _fullPath = fullPath;
-            _hash = hash ?? new byte[20]; // zero length file
-            _size = size;
-            _conflictResolver = conflict ?? ConflictResolver.Rewrite;
-            _dateTime = (dateTime ?? DateTime.Now).ToUniversalTime();
-        }
-
-        public MobAddFileRequest(HttpCommonSettings settings, IAuth auth, string metaServer, string fullPath, string hash, long size, DateTime? dateTime, ConflictResolver? conflict)
-            : this(settings, auth, metaServer, fullPath, hash?.HexStringToByteArray(), size, dateTime, conflict)
-        {
-        }
-
-        protected override byte[] CreateHttpContent()
-        {
-            using var stream = new RequestBodyStream();
-
-            stream.WritePu16((byte)Operation.AddFile);
-            stream.WritePu16(Revision);
-            stream.WriteString(_fullPath);
-            stream.WritePu64(_size);
-
-            stream.WritePu64(_dateTime.ToUnix());
-            stream.WritePu32(00);
-
             stream.Write(_hash);
+            stream.WritePu64(_size);
+        }
 
-            long mask = ConflictResolver.Rename == _conflictResolver  // 1 = overwrite, 55 = don't add if not changed, add with rename if changed
-                ? 55
-                : 1;
-            stream.WritePu32(mask);
+        var body = stream.GetBytes();
+        return body;
+    }
 
-            if ((mask & 32) != 0)
+    private static readonly OpResult[] SuccessCodes = { OpResult.Ok, OpResult.NotModified, OpResult.Dunno04, OpResult.Dunno09 };
+
+    protected override RequestResponse<Result> DeserializeMessage(NameValueCollection responseHeaders, ResponseBodyStream data)
+    {
+        var opres = (OpResult)(int)data.OperationResult;
+
+        //if (!SuccessCodes.Contains(opres))
+        //    throw new Exception($"{nameof(MobAddFileRequest)} failed with operation result code {opres} ({(int)opres})");
+
+        bool isSuccess = SuccessCodes.Contains(opres);
+
+        var res = new RequestResponse<Result>
+        {
+            Ok = true,
+            Result = new Result
             {
-                stream.Write(_hash);
-                stream.WritePu64(_size);
+                IsSuccess = isSuccess,
+                OperationResult = data.OperationResult,
+                Path = _fullPath
             }
+        };
 
-            var body = stream.GetBytes();
-            return body;
-        }
+        return res;
+    }
 
-        private static readonly OpResult[] SuccessCodes = { OpResult.Ok, OpResult.NotModified, OpResult.Dunno04, OpResult.Dunno09 };
+    private const int Revision = 0;
 
-        protected override RequestResponse<Result> DeserializeMessage(NameValueCollection responseHeaders, ResponseBodyStream data)
-        {
-            var opres = (OpResult)(int)data.OperationResult;
+    private enum OpResult
+    {
+        Ok = 0,
+        Error01 = 1,
+        Dunno04 = 4,
+        WrongPath = 5,
+        NoFreeSpace = 7,
+        Dunno09 = 9,
+        NotModified = 12,
+        FailedA = 253,
+        FailedB = 254
+    }
 
-            //if (!SuccessCodes.Contains(opres))
-            //    throw new Exception($"{nameof(MobAddFileRequest)} failed with operation result code {opres} ({(int)opres})");
-
-            bool isSuccess = SuccessCodes.Contains(opres);
-
-            var res = new RequestResponse<Result>
-            {
-                Ok = true,
-                Result = new Result
-                {
-                    IsSuccess = isSuccess,
-                    OperationResult = data.OperationResult,
-                    Path = _fullPath
-                }
-            };
-
-            return res;
-        }
-
-        private const int Revision = 0;
-
-        private enum OpResult
-        {
-            Ok = 0,
-            Error01 = 1,
-            Dunno04 = 4,
-            WrongPath = 5,
-            NoFreeSpace = 7,
-            Dunno09 = 9,
-            NotModified = 12,
-            FailedA = 253,
-            FailedB = 254
-        }
-
-        public class Result : BaseResponseResult
-        {
-            public bool IsSuccess { get; set; }
-            public string Path { get; set; }
-        }
+    public class Result : BaseResponseResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Path { get; set; }
     }
 }

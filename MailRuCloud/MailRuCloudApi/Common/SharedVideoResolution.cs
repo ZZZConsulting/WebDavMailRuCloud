@@ -1,20 +1,19 @@
 ﻿using System.Runtime.Serialization;
 
-namespace YaR.Clouds.Common
+namespace YaR.Clouds.Common;
+
+public enum SharedVideoResolution
 {
-    public enum SharedVideoResolution
-    {
-        [EnumMember(Value = "0p")]
-        All,
-        [EnumMember(Value = "240p")]
-        R240,
-        [EnumMember(Value = "360p")]
-        R360,
-        [EnumMember(Value = "480p")]
-        R480,
-        [EnumMember(Value = "720p")]
-        R720,
-        [EnumMember(Value = "1080p")]
-        R1080
-    }
+    [EnumMember(Value = "0p")]
+    All,
+    [EnumMember(Value = "240p")]
+    R240,
+    [EnumMember(Value = "360p")]
+    R360,
+    [EnumMember(Value = "480p")]
+    R480,
+    [EnumMember(Value = "720p")]
+    R720,
+    [EnumMember(Value = "1080p")]
+    R1080
 }

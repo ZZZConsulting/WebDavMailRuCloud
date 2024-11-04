@@ -1,10 +1,9 @@
-﻿namespace YaR.Clouds.Base
-{
-    internal interface IBasicCredentials
-    {
-        string Login { get; }
-        string Password { get; }
+﻿namespace YaR.Clouds.Base;
 
-        bool IsAnonymous { get; }
-    }
+internal interface IBasicCredentials
+{
+    string Login { get; }
+    string Password { get; }
+
+    bool IsAnonymous { get; }
 }

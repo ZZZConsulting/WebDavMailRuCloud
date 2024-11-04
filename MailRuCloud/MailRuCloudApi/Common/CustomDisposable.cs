@@ -1,19 +1,18 @@
 ﻿using System;
 
-namespace YaR.Clouds.Common
+namespace YaR.Clouds.Common;
+
+class CustomDisposable<T> : IDisposable
 {
-    class CustomDisposable<T> : IDisposable
+    public T Value { get; set; }
+    public Action OnDispose { get; set; }
+
+    public void Dispose()
     {
-        public T Value { get; set; }
-        public Action OnDispose { get; set; }
+        var value = Value;
+        if (value is IDisposable disp)
+            disp.Dispose();
 
-        public void Dispose()
-        {
-            var value = Value;
-            if (value is IDisposable disp)
-                disp.Dispose();
-
-            OnDispose?.Invoke();
-        }
+        OnDispose?.Invoke();
     }
 }

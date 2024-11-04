@@ -6,219 +6,218 @@ using YaR.Clouds.Base.Repos;
 using YaR.Clouds.Base.Streams.Cache;
 using YaR.Clouds.Extensions;
 
-namespace YaR.Clouds.Base.Streams
+namespace YaR.Clouds.Base.Streams;
+
+/// <summary>
+/// Upload stream based on HttpClient
+/// </summary>
+/// <remarks>Suitable for .NET Core, on .NET desktop POST requests does not return response content.</remarks>
+abstract class UploadStreamHttpClient : Stream
 {
-    /// <summary>
-    /// Upload stream based on HttpClient
-    /// </summary>
-    /// <remarks>Suitable for .NET Core, on .NET desktop POST requests does not return response content.</remarks>
-    abstract class UploadStreamHttpClient : Stream
+    private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(UploadStreamHttpClient));
+
+    protected UploadStreamHttpClient(string destinationPath, Cloud cloud, long size)
     {
-        private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(UploadStreamHttpClient));
+        _cloud = cloud;
+        _file = new File(destinationPath, size);
+        _cloudFileHasher = _cloud.RequestRepo.GetHasher();
 
-        protected UploadStreamHttpClient(string destinationPath, Cloud cloud, long size)
+        Initialize();
+    }
+
+    public Action FileStreamSent = null;
+    private void OnFileStreamSent() => FileStreamSent?.Invoke();
+
+    public Action ServerFileProcessed = null;
+    private void OnServerFileProcessed() => ServerFileProcessed?.Invoke();
+
+
+    private void Initialize()
+    {
+        _uploadTask = Task.Run(Upload);
+    }
+
+    private void Upload()
+    {
+        try
         {
-            _cloud = cloud;
-            _file = new File(destinationPath, size);
-            _cloudFileHasher = _cloud.RequestRepo.GetHasher();
-
-            Initialize();
+            if (_cloud.RequestRepo.SupportsAddSmallFileByHash && _file.OriginalSize <= _cloudFileHasher.Length) // do not send upload request if file content fits to hash
+                UploadSmall(_ringBuffer);
+            else if (_cloud.RequestRepo.SupportsDeduplicate && _cloud.Settings.UseDeduplicate) // && !_file.ServiceInfo.IsCrypted) // && !_file.ServiceInfo.SplitInfo.IsPart)
+                UploadCache(_ringBuffer);
+            else
+                UploadFull(_ringBuffer);
         }
-
-        public Action FileStreamSent = null;
-        private void OnFileStreamSent() => FileStreamSent?.Invoke();
-
-        public Action ServerFileProcessed = null;
-        private void OnServerFileProcessed() => ServerFileProcessed?.Invoke();
-
-
-        private void Initialize()
+        catch (Exception e)
         {
-            _uploadTask = Task.Run(Upload);
+            Logger.Error($"Uploading to {_file.FullPath} failed with {e}"); //TODO remove duplicate exception catch?
+            throw;
         }
+    }
 
-        private void Upload()
+    private void UploadSmall(Stream sourceStream)
+    {
+        Logger.Debug($"Uploading [small file] {_file.FullPath}");
+
+        sourceStream.CopyTo(Null);
+        OnFileStreamSent();
+
+        _file.Hash = _cloudFileHasher?.Hash;
+
+        _cloud.AddFileInCloud(_file, ConflictResolver.Rewrite)
+            .Result
+            .ThrowIf(r => !r.Success, _ => new Exception($"Cannot add file {_file.FullPath}"));
+    }
+
+    private void UploadCache(Stream sourceStream)
+    {
+        using var cache = new CacheStream(_file, sourceStream, _cloud.Settings.DeduplicateRules);
+
+        if (cache.Process())
+        {
+            Logger.Debug($"Uploading [{cache.DataCacheName}] {_file.FullPath}");
+
+            OnFileStreamSent();
+
+            _file.Hash = _cloudFileHasher.Hash;
+            bool added = _cloud.AddFileInCloud(_file, ConflictResolver.Rewrite)
+                .Result
+                .Success;
+
+            if (!added)
+                UploadFull(cache.Stream, false);
+        }
+        else
+        {
+            UploadFull(sourceStream);
+        }
+    }
+
+    private void UploadFull(Stream sourceStream, bool doInvokeFileStreamSent = true)
+    {
+        Logger.Debug($"Uploading [direct] {_file.FullPath}");
+
+        var pushContent = new PushStreamContent((stream, _, _) =>
         {
             try
             {
-                if (_cloud.RequestRepo.SupportsAddSmallFileByHash && _file.OriginalSize <= _cloudFileHasher.Length) // do not send upload request if file content fits to hash
-                    UploadSmall(_ringBuffer);
-                else if (_cloud.RequestRepo.SupportsDeduplicate && _cloud.Settings.UseDeduplicate) // && !_file.ServiceInfo.IsCrypted) // && !_file.ServiceInfo.SplitInfo.IsPart)
-                    UploadCache(_ringBuffer);
-                else
-                    UploadFull(_ringBuffer);
+                sourceStream.CopyTo(stream);
+                stream.Flush();
+                stream.Close();
+                if (doInvokeFileStreamSent)
+                    OnFileStreamSent();
             }
             catch (Exception e)
             {
-                Logger.Error($"Uploading to {_file.FullPath} failed with {e}"); //TODO remove duplicate exception catch?
+                Logger.Error($"(inner) Uploading to {_file.FullPath} failed with {e}");
                 throw;
             }
-        }
+        });
 
-        private void UploadSmall(Stream sourceStream)
+        var client = HttpClientFabric.Instance[_cloud];
+        DateTime timestampBeforeOperation = DateTime.Now;
+        try
         {
-            Logger.Debug($"Uploading [small file] {_file.FullPath}");
+            _cloud.OnBeforeUpload(_file.FullPath);
 
-            sourceStream.CopyTo(Null);
-            OnFileStreamSent();
+            var uploadFileResult = _cloud.RequestRepo.DoUpload(client, pushContent, _file).Result;
 
-            _file.Hash = _cloudFileHasher?.Hash;
+            if (uploadFileResult.HttpStatusCode != HttpStatusCode.Created &&
+                uploadFileResult.HttpStatusCode != HttpStatusCode.OK)
+                throw new Exception("Cannot upload file, status " + uploadFileResult.HttpStatusCode);
 
-            _cloud.AddFileInCloud(_file, ConflictResolver.Rewrite)
-                .Result
-                .ThrowIf(r => !r.Success, _ => new Exception($"Cannot add file {_file.FullPath}"));
-        }
+            // 2020-10-26 mail.ru does not return file size now
+            //if (uploadFileResult.HasReturnedData && _file.OriginalSize != uploadFileResult.Size)
+            //    throw new Exception("Local and remote file size does not match");
 
-        private void UploadCache(Stream sourceStream)
-        {
-            using var cache = new CacheStream(_file, sourceStream, _cloud.Settings.DeduplicateRules);
-
-            if (cache.Process())
+            _file.Hash = uploadFileResult.HasReturnedData switch
             {
-                Logger.Debug($"Uploading [{cache.DataCacheName}] {_file.FullPath}");
+                true when CheckHashes && null != uploadFileResult.Hash && _cloudFileHasher != null &&
+                          _cloudFileHasher.Hash.Hash.Value != uploadFileResult.Hash.Hash.Value => throw
+                    new HashMatchException(_cloudFileHasher.Hash.ToString(), uploadFileResult.Hash.ToString()),
+                true => uploadFileResult.Hash,
+                _ => _file.Hash
+            };
 
-                OnFileStreamSent();
-
-                _file.Hash = _cloudFileHasher.Hash;
-                bool added = _cloud.AddFileInCloud(_file, ConflictResolver.Rewrite)
+            if (uploadFileResult.NeedToAddFile)
+                _cloud.AddFileInCloud(_file, ConflictResolver.Rewrite)
                     .Result
-                    .Success;
-
-                if (!added)
-                    UploadFull(cache.Stream, false);
-            }
-            else
-            {
-                UploadFull(sourceStream);
-            }
+                    .ThrowIf(r => !r.Success, _ => new Exception($"Cannot add file {_file.FullPath}"));
         }
-
-        private void UploadFull(Stream sourceStream, bool doInvokeFileStreamSent = true)
+        finally
         {
-            Logger.Debug($"Uploading [direct] {_file.FullPath}");
-
-            var pushContent = new PushStreamContent((stream, _, _) =>
-            {
-                try
-                {
-                    sourceStream.CopyTo(stream);
-                    stream.Flush();
-                    stream.Close();
-                    if (doInvokeFileStreamSent)
-                        OnFileStreamSent();
-                }
-                catch (Exception e)
-                {
-                    Logger.Error($"(inner) Uploading to {_file.FullPath} failed with {e}");
-                    throw;
-                }
-            });
-
-            var client = HttpClientFabric.Instance[_cloud];
-            DateTime timestampBeforeOperation = DateTime.Now;
-            try
-            {
-                _cloud.OnBeforeUpload(_file.FullPath);
-
-                var uploadFileResult = _cloud.RequestRepo.DoUpload(client, pushContent, _file).Result;
-
-                if (uploadFileResult.HttpStatusCode != HttpStatusCode.Created &&
-                    uploadFileResult.HttpStatusCode != HttpStatusCode.OK)
-                    throw new Exception("Cannot upload file, status " + uploadFileResult.HttpStatusCode);
-
-                // 2020-10-26 mail.ru does not return file size now
-                //if (uploadFileResult.HasReturnedData && _file.OriginalSize != uploadFileResult.Size)
-                //    throw new Exception("Local and remote file size does not match");
-
-                _file.Hash = uploadFileResult.HasReturnedData switch
-                {
-                    true when CheckHashes && null != uploadFileResult.Hash && _cloudFileHasher != null &&
-                              _cloudFileHasher.Hash.Hash.Value != uploadFileResult.Hash.Hash.Value => throw
-                        new HashMatchException(_cloudFileHasher.Hash.ToString(), uploadFileResult.Hash.ToString()),
-                    true => uploadFileResult.Hash,
-                    _ => _file.Hash
-                };
-
-                if (uploadFileResult.NeedToAddFile)
-                    _cloud.AddFileInCloud(_file, ConflictResolver.Rewrite)
-                        .Result
-                        .ThrowIf(r => !r.Success, _ => new Exception($"Cannot add file {_file.FullPath}"));
-            }
-            finally
-            {
-                _cloud.OnAfterUpload(_file.FullPath, timestampBeforeOperation);
-            }
+            _cloud.OnAfterUpload(_file.FullPath, timestampBeforeOperation);
         }
+    }
 
-        public bool CheckHashes { get; set; } = true;
+    public bool CheckHashes { get; set; } = true;
 
-        public override void Write(byte[] buffer, int offset, int count)
+    public override void Write(byte[] buffer, int offset, int count)
+    {
+        if (CheckHashes ||
+            (_cloudFileHasher != null &&
+             _cloud.RequestRepo.SupportsAddSmallFileByHash &&
+             _file.OriginalSize <= _cloudFileHasher.Length))
         {
-            if (CheckHashes ||
-                (_cloudFileHasher != null &&
-                 _cloud.RequestRepo.SupportsAddSmallFileByHash &&
-                 _file.OriginalSize <= _cloudFileHasher.Length))
-            {
-                _cloudFileHasher?.Append(buffer, offset, count);
-            }
-
-            _ringBuffer.Write(buffer, offset, count);
+            _cloudFileHasher?.Append(buffer, offset, count);
         }
 
-        protected override void Dispose(bool disposing)
+        _ringBuffer.Write(buffer, offset, count);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (!disposing) return;
+
+        try
         {
-            base.Dispose(disposing);
-            if (!disposing) return;
+            _ringBuffer.Flush();
 
-            try
-            {
-                _ringBuffer.Flush();
-
-                _uploadTask.GetAwaiter().GetResult();
-                OnServerFileProcessed();
+            _uploadTask.GetAwaiter().GetResult();
+            OnServerFileProcessed();
 
 
-            }
-            finally
-            {
-                _ringBuffer?.Dispose();
-                _cloudFileHasher?.Dispose();
-            }
         }
-
-        private readonly Cloud _cloud;
-        private readonly File _file;
-
-        private readonly ICloudHasher _cloudFileHasher;
-        private Task _uploadTask;
-        private readonly RingBufferedStream _ringBuffer = new(65536);
-
-        //===========================================================================================================================
-
-        public override bool CanRead => true;
-        public override bool CanSeek => true;
-        public override bool CanWrite => true;
-        public override long Length => _file.OriginalSize;
-        public override long Position { get; set; }
-
-        public override void SetLength(long value)
+        finally
         {
-            _file.OriginalSize = value;
+            _ringBuffer?.Dispose();
+            _cloudFileHasher?.Dispose();
         }
+    }
 
-        public override void Flush()
-        {
-            throw new NotImplementedException();
-        }
+    private readonly Cloud _cloud;
+    private readonly File _file;
 
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotImplementedException();
-        }
+    private readonly ICloudHasher _cloudFileHasher;
+    private Task _uploadTask;
+    private readonly RingBufferedStream _ringBuffer = new(65536);
 
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
-        }
+    //===========================================================================================================================
+
+    public override bool CanRead => true;
+    public override bool CanSeek => true;
+    public override bool CanWrite => true;
+    public override long Length => _file.OriginalSize;
+    public override long Position { get; set; }
+
+    public override void SetLength(long value)
+    {
+        _file.OriginalSize = value;
+    }
+
+    public override void Flush()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        throw new NotImplementedException();
     }
 }
