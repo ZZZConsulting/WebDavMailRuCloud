@@ -18,6 +18,7 @@ using Stream = System.IO.Stream;
 // Yandex has API version 378.1.0
 // Yandex has API version 382.2.0
 // Yandex has API version 383.0.0
+// Yandex has API version 389.3.0
 
 namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb
 {

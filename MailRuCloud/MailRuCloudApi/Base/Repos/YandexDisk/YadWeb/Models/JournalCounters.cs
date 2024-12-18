@@ -7,7 +7,7 @@ internal class JournalCountersV2 : YadModelV2
 {
     public JournalCountersV2()
     {
-        APIMethod = "cloud/virtual-disk-journal-counters";
+        APIMethod = "intapi/journal-counters";
         ResultType = typeof(YadJournalCountersV2);
         RequestParameter = new YadRequestV2JournalCounters()
         {
