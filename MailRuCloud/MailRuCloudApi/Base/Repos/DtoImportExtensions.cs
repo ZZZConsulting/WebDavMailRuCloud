@@ -44,10 +44,9 @@ internal static class DtoImportExtensions
     internal static IEnumerable<File> ToGroupedFiles(this IEnumerable<File> list)
     {
         var groupedFiles = list
-            .GroupBy(f => f.ServiceInfo.CleanName,
-                file => file)
-        //TODO: DIRTY: if group contains header file, than make SplittedFile, else do not group
-        .SelectMany(group => group.Count() == 1
+            .GroupBy(f => f.ServiceInfo.CleanName, file => file)
+            //TODO: DIRTY: if group contains header file, than make SplittedFile, else do not group
+            .SelectMany(group => group.Count() == 1
                 ? group.Take(1)
                 : group.Any(f => f.Name == f.ServiceInfo.CleanName)
                     ? Enumerable.Repeat(new SplittedFile(group.ToList()), 1)

@@ -26,6 +26,14 @@ public class File : IEntry
 
         _originalSize = size;
         _hash = hash;
+
+        //if (Name?.StartsWith(".") ?? false)
+        //{
+        //    if (Attributes.HasFlag(FileAttributes.Normal))
+        //        Attributes = FileAttributes.Hidden;
+        //    else
+        //        Attributes |= FileAttributes.Hidden;
+        //}
     }
 
     public File(string fullPath, long size, params PublicLinkInfo[] links)
@@ -175,7 +183,8 @@ public class File : IEntry
     public void SetName(string destinationName)
     {
         FullPath = WebDavPath.Combine(Path, destinationName);
-        if (ServiceInfo != null) ServiceInfo.CleanName = Name;
+        if (ServiceInfo != null)
+            ServiceInfo.CleanName = Name;
 
         if (Files.Count <= 1)
             return;

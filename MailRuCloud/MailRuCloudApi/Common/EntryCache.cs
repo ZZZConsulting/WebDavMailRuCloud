@@ -807,7 +807,11 @@ public class EntryCache : IDisposable
 
                 // Добавить новый
                 if (createdEntry is File file)
-                    AddInternal(file, DateTime.Now);
+                {
+                    // Проверка чтобы не добавлять в кэш файлы вида test.csv.wdmrc.001b, создаваемые в зашифрованных папках
+                    if (file.ServiceInfo.CleanName == file.Name)
+                        AddInternal(file, DateTime.Now);
+                }
                 else
                 if (createdEntry is Folder folder)
                 {

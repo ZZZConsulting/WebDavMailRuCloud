@@ -21,6 +21,14 @@ public class Folder : IEntry
     {
         FullPath = WebDavPath.Clean(fullPath);
         Name = WebDavPath.Name(FullPath);
+
+        //if (Name?.StartsWith(".") ?? false)
+        //{
+        //    if (Attributes.HasFlag(FileAttributes.Normal))
+        //        Attributes = FileAttributes.Hidden;
+        //    else
+        //        Attributes |= FileAttributes.Hidden;
+        //}
     }
 
     /// <summary>
@@ -33,6 +41,7 @@ public class Folder : IEntry
         : this(fullPath)
     {
         Size = size;
+
         if (publicLinks != null)
         {
             foreach (var link in publicLinks)

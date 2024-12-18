@@ -36,7 +36,9 @@ public class UploadStreamFabric
                 throw new Exception($"Cannot upload {file.FullPath} to crypt folder without additional password!");
 
             // #142 remove crypted file parts if size changed
-            await _cloud.Remove(file.FullPath);
+            IEntry checkExistance = await _cloud.GetItemAsync(file.FullPath, Cloud.ItemType.File);
+            if(checkExistance is not null)
+                await _cloud.Remove(file.FullPath);
 
             stream = GetCryptoStream(file, onUploaded);
         }
