@@ -45,7 +45,7 @@ namespace NWebDav.Server.Helpers
         /// <summary>
         /// Optional conditional date/time.
         /// </summary>
-        public DateTime If {get; set; }
+        public DateTime If { get; set; }
     }
 
     /// <summary>
@@ -64,6 +64,7 @@ namespace NWebDav.Server.Helpers
 #else
         private static readonly Regex s_rangeRegex = new(RangeRegexMask, RegexOptions.Compiled);
 #endif
+
         /// <summary>
         /// Split an URI into a collection and name part.
         /// </summary>
@@ -75,8 +76,10 @@ namespace NWebDav.Server.Helpers
         {
             // Strip a trailing slash
             var trimmedUri = uri.AbsoluteUri;
+#pragma warning disable CA1866 // Use char overload
             if (trimmedUri.EndsWith("/"))
                 trimmedUri = trimmedUri.Substring(0, trimmedUri.Length - 1);
+#pragma warning restore CA1866 // Use char overload
 
             // Determine the offset of the name
             var slashOffset = trimmedUri.LastIndexOf('/');
@@ -107,7 +110,11 @@ namespace NWebDav.Server.Helpers
                 return null;
 
             // Create the destination URI
-            return destinationHeader.StartsWith("/") ? new WebDavUri(request.Url.BaseUrl, destinationHeader) : new WebDavUri(destinationHeader);
+#pragma warning disable CA1866 // Use char overload
+            return destinationHeader.StartsWith("/")
+                ? new WebDavUri(request.Url.BaseUrl, destinationHeader)
+                : new WebDavUri(destinationHeader);
+#pragma warning restore CA1866 // Use char overload
         }
 
         /// <summary>
@@ -190,7 +197,7 @@ namespace NWebDav.Server.Helpers
             }
 
             // Return the timeout values
-            return timeoutHeader.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(ParseTimeout).Where(t => t != 0).ToArray();
+            return timeoutHeader.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(ParseTimeout).Where(t => t != 0).ToArray();
         }
 
         /// <summary>
@@ -208,8 +215,10 @@ namespace NWebDav.Server.Helpers
                 return null;
 
             // Strip the brackets from the header
+#pragma warning disable CA1866 // Use char overload
             if (!lockTokenHeader.StartsWith("<") || !lockTokenHeader.EndsWith(">"))
                 return null;
+#pragma warning restore CA1866 // Use char overload
 
             // Create an Uri of the intermediate part
             return new WebDavUri(lockTokenHeader.Substring(1, lockTokenHeader.Length - 2));
@@ -262,7 +271,7 @@ namespace NWebDav.Server.Helpers
             var range = new Range
             {
                 Start = !string.IsNullOrEmpty(startText) ? long.Parse(startText) : null,
-                End = !string.IsNullOrEmpty(endText) ? long.Parse(endText ) : null
+                End = !string.IsNullOrEmpty(endText) ? long.Parse(endText) : null
             };
 
             // Check if we also have an If-Range
@@ -298,13 +307,7 @@ namespace NWebDav.Server.Helpers
         // async, but if performance is an ultimate goal, then don't use WebDAV and you should
         // be upgrading to .NET Core anyway :-) The other option is to put the burden on all
         // the callers of this method, which I prefer to avoid.
-#if !USE_XML_ASYNC_READWRITE
-#pragma warning disable 1998
-#endif
         public static async Task<XDocument> LoadXmlDocumentAsync(this IHttpRequest request)
-#if !USE_XML_ASYNC_READWRITE
-#pragma warning restore 1998
-#endif
         {
             // If there is no input stream, then there is no XML document
             if (request.Stream == null || request.Stream == Stream.Null)
@@ -323,39 +326,37 @@ namespace NWebDav.Server.Helpers
                 return null;
 
             // Obtain an XML document from the stream
-#if USE_XML_ASYNC_READWRITE
-            var xDocument = await XDocument.LoadAsync(request.Stream, LoadOptions.None, cancellationToken: default);
-#else
+#if NET48
             var xDocument = await Task.Run(() => XDocument.Load(request.Stream));
+#else
+            var xDocument = await XDocument.LoadAsync(request.Stream, LoadOptions.None, cancellationToken: default);
 #endif
 #if DEBUG
             // Dump the XML document to the logging
             if (xDocument.Root != null && s_log.IsLogEnabled(Logging.LogLevel.Debug))
             {
                 // Format the XML document as an in-memory text representation
-                using (var ms = new MemoryStream())
+                using var ms = new MemoryStream();
+                using (var xmlWriter = System.Xml.XmlWriter.Create(ms, new System.Xml.XmlWriterSettings
                 {
-                    using (var xmlWriter = System.Xml.XmlWriter.Create(ms, new System.Xml.XmlWriterSettings
-                    {
-                        OmitXmlDeclaration = false,
-                        Indent = true,
-                        Encoding = System.Text.Encoding.UTF8
-                    }))
-                    {
-                        // Write the XML document to the stream
-                        xDocument.WriteTo(xmlWriter);
-                    }
-
-                    // Flush
-                    ms.Flush();
-
-                    // Reset stream and write the stream to the result
-                    ms.Seek(0, SeekOrigin.Begin);
-
-                    // Log the XML text to the logging
-                    var reader = new StreamReader(ms);
-                    s_log.Log(Logging.LogLevel.Debug, () => reader.ReadToEnd());
+                    OmitXmlDeclaration = false,
+                    Indent = true,
+                    Encoding = System.Text.Encoding.UTF8
+                }))
+                {
+                    // Write the XML document to the stream
+                    xDocument.WriteTo(xmlWriter);
                 }
+
+                // Flush
+                ms.Flush();
+
+                // Reset stream and write the stream to the result
+                ms.Seek(0, SeekOrigin.Begin);
+
+                // Log the XML text to the logging
+                var reader = new StreamReader(ms);
+                s_log.Log(Logging.LogLevel.Debug, () => reader.ReadToEnd());
             }
 #endif
             // Return the XML document

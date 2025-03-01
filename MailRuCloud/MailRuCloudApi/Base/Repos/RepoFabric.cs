@@ -4,18 +4,12 @@ using YaR.Clouds.Base.Repos.MailRuCloud.WebV2;
 
 namespace YaR.Clouds.Base.Repos;
 
-public class RepoFabric
+public class RepoFabric(CloudSettings settings, Credentials credentials)
 {
     private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(RepoFabric));
 
-    private readonly CloudSettings _settings;
-    private readonly Credentials _credentials;
-
-    public RepoFabric(CloudSettings settings, Credentials credentials)
-    {
-        _settings = settings;
-        _credentials = credentials;
-    }
+    private readonly CloudSettings _settings = settings;
+    private readonly Credentials _credentials = credentials;
 
     public IRequestRepo Create()
     {
@@ -29,12 +23,14 @@ public class RepoFabric
 
         IRequestRepo repo = _credentials.Protocol switch
         {
-            Protocol.YadWeb => _credentials.AuthenticationUsingBrowser
-                ? new YandexDisk.YadWeb.YadWebRequestRepo2(_settings, _settings.Proxy, _credentials)
-                : new YandexDisk.YadWeb.YadWebRequestRepo(_settings, _settings.Proxy, _credentials),
-            Protocol.WebM1Bin => new WebBinRequestRepo(_settings, _credentials, TwoFaHandler),
-            Protocol.WebV2 => new WebV2RequestRepo(_settings, _credentials, TwoFaHandler),
-            _ => throw new Exception("Unknown protocol")
+            Protocol.YadWeb
+                => new YandexDisk.YadWeb.YadWebRequestRepo(_settings, _settings.Proxy, _credentials),
+            Protocol.WebM1Bin
+                => new WebBinRequestRepo(_settings, _credentials, TwoFaHandler),
+            Protocol.WebV2
+                => new WebV2RequestRepo(_settings, _credentials, TwoFaHandler),
+            _
+                => throw new Exception("Unknown protocol")
         };
 
         return repo;

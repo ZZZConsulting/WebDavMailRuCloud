@@ -6,35 +6,39 @@ namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models;
 
 public class YadPostDataV2
 {
-    public YadRequestV2 Request { get; set; }
+    public YadRequestV2 PostData { get; set; }
 
     public YadPostDataV2(string sk, string idClient)
     {
-        Request = new YadRequestV2()
+        PostData = new YadRequestV2()
         {
             Sk = sk,
             IdClient = idClient
         };
     }
-
-    public byte[] CreateHttpContent()
-        => System.Text.Encoding.UTF8.GetBytes(
-            JsonConvert.SerializeObject(
-                Request));
 }
 
 public abstract class YadModelV2
 {
     public string APIMethod { get; set; }
-    public YadRequestV2Parameter RequestParameter { get; set; }
+    public Func<YadRequestV2Parameter> RequestParameter { get; set; } = () => null;
 
     public Action<string> Deserialize = null;
 
+    public string RequestJsonForDebug { get; set; }
+    public string ResponseJsonForDebug { get; set; }
+
+    /// <summary>
+    /// Ошибки обращения к серверу, не может быть null.
+    /// </summary>
     public List<YadResponseV2Error> Errors { get; set; } = [];
-    internal object ResultObject { get; set; }
+
     internal Type ResultType { get; set; }
 
-    public string SourceJsonForDebug { get; set; }
+    protected object ResultObject { get; private set; }
+
+    internal void SetResultObject(object value)
+        => ResultObject = value;
 }
 
 
@@ -60,7 +64,7 @@ public class YadResponseV2Error
     public YadResponseV2ErrorDescription Error { get; set; }
 }
 
-public class YadOperationStatusResultV2 : YadResponseV2Error
+public class YadResponseV2OperationStatus : YadResponseV2Error
 {
     [JsonProperty("status")]
     public string Status { get; set; }
@@ -89,7 +93,7 @@ public class YadRequestV2
     [JsonProperty("apiMethod")]
     public string APIMethod { get; set; }
 
-    [JsonProperty("requestParams")]
+    [JsonProperty("requestParams", NullValueHandling = NullValueHandling.Ignore)]
     public YadRequestV2Parameter RequestParameter { get; set; }
 }
 
@@ -97,7 +101,7 @@ public class YadRequestV2Parameter
 {
 }
 
-public class YadRequestV2ParameterOperation : YadRequestV2Parameter
+public class YadRequestV2Operations : YadRequestV2Parameter
 {
     [JsonProperty("operations")]
     public List<YadRequestV2Operation> Operations { get; set; }
@@ -107,4 +111,10 @@ public class YadRequestV2Operation
 {
     [JsonProperty("src")]
     public string Src { get; set; }
+
+    [JsonProperty("dst", NullValueHandling = NullValueHandling.Ignore)]
+    public string Dst { get; set; }
+
+    [JsonProperty("force", NullValueHandling = NullValueHandling.Ignore)]
+    public int? Force { get; set; }
 }

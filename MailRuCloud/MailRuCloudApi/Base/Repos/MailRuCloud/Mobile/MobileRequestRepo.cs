@@ -16,7 +16,7 @@ namespace YaR.Clouds.Base.Repos.MailRuCloud.Mobile;
 /// Part of Mobile protocol.
 /// Not usable.
 /// </summary>
-class MobileRequestRepo : MailRuBaseRepo, IRequestRepo
+internal class MobileRequestRepo : MailRuBaseRepo, IRequestRepo
 {
     private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(MobileRequestRepo));
 
@@ -70,6 +70,7 @@ class MobileRequestRepo : MailRuBaseRepo, IRequestRepo
 
     //private readonly Cached<ServerRequestResult> _downloadServer;
     private readonly int _listDepth;
+
     //private const int DownloadServerExpiresSec = 20 * 60;
 
 
@@ -221,7 +222,7 @@ class MobileRequestRepo : MailRuBaseRepo, IRequestRepo
         throw new NotImplementedException();
     }
 
-    public Task<RemoveResult> Remove(string fullPath)
+    public Task<DeleteResult> Remove(string fullPath)
     {
         throw new NotImplementedException();
     }

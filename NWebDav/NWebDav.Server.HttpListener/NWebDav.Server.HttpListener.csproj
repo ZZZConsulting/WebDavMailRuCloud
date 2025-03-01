@@ -3,19 +3,24 @@
   <Import Project="..\..\Common.targets" />
 
   <PropertyGroup>
+    <LangVersion>$(CommonLangVersion)</LangVersion>
     <TargetFrameworks>$(CommonTargetFrameworks)</TargetFrameworks>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <LangVersion>$(CommonLangVersion)</LangVersion>
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.0|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
+    <PackageReference Include="runtime.native.System" Version="4.3.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NWebDav.Server\NWebDav.Server.csproj" />

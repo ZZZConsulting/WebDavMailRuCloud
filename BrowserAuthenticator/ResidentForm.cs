@@ -14,7 +14,9 @@ public partial class ResidentForm : Form
     private HttpListener? Listener;
     private bool RunServer = false;
     private string PreviousPort;
+
     public delegate void Execute(string login, BrowserAppResult response, Dictionary<string, string> headers);
+
     public Execute AuthExecuteDelegate;
     private readonly int? SavedTop = null;
     private readonly int? SavedLeft = null;
@@ -55,7 +57,7 @@ public partial class ResidentForm : Form
             Password.Text = value;
 #if DEBUG
         else
-            Password.Text = "adb4bcd5-b4b6-45b7-bb7d-b38470917448";
+            Password.Text = "240C8CFC-64E6-4329-A1B3-D6BA2CEC53CB";
 #endif
         TestLogin.BeginUpdate();
         value = config.AppSettings?.Settings?["logins"]?.Value ?? string.Empty;
@@ -100,6 +102,7 @@ public partial class ResidentForm : Form
         HideTimer.Interval = 100;
         HideTimer.Enabled = true;
     }
+
     private void HideTimer_Tick(object sender, EventArgs e)
     {
         HideTimer.Enabled = false;
@@ -137,6 +140,7 @@ public partial class ResidentForm : Form
             Visible = false;
         }
     }
+
     private void ResidentForm_Move(object sender, EventArgs e)
     {
         if (Visible)
@@ -166,6 +170,7 @@ public partial class ResidentForm : Form
         // Save the configuration file.
         config.Save(ConfigurationSaveMode.Modified);
     }
+
     private void NotifyIcon_MouseDoubleClick(object? sender, MouseEventArgs e)
     {
         HideShow(!Visible);
@@ -183,6 +188,7 @@ public partial class ResidentForm : Form
         HideShow(false);
         e.Cancel = RunServer ? /*просто закрывается окно*/ true : /*Выход в меню TrayIcon*/ false;
     }
+
     private void NotifyIcon_ExitClick(object? sender, EventArgs e)
     {
         NotifyIcon.Visible = false;
@@ -285,7 +291,7 @@ public partial class ResidentForm : Form
         OpenDialog(TestLogin.Text, response, headers);
     }
 
-    private void OpenDialog(string desiredLogin, BrowserAppResult response, Dictionary<string,string> headers)
+    private void OpenDialog(string desiredLogin, BrowserAppResult response, Dictionary<string, string> headers)
     {
         bool isYandexCloud = false;
         bool isMailCloud = false;
@@ -343,7 +349,7 @@ public partial class ResidentForm : Form
                 var password = request?.Password;
 
                 Dictionary<string, string> headers = new();
-                if (request?.UserAgent is not null )
+                if (request?.UserAgent is not null)
                     headers.Add("user-agent", request.UserAgent);
                 if (request?.SecChUa is not null)
                     headers.Add("sec-ch-ua", request.SecChUa);

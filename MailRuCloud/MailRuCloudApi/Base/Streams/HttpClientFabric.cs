@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace YaR.Clouds.Base.Streams;
 
-class HttpClientFabric
+internal class HttpClientFabric
 {
     public static HttpClientFabric Instance => _instance ??= new HttpClientFabric();
     private static HttpClientFabric _instance;

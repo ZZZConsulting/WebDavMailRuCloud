@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -19,6 +20,8 @@ public partial class Credentials : IBasicCredentials
 
     private static readonly string[] AnonymousLogins = { "anonymous", "anon", "anonym", string.Empty };
 
+    private static readonly ConcurrentDictionary<string, Tuple<DateTime, string>> _cookieCache =
+        new ConcurrentDictionary<string, Tuple<DateTime, string>>(StringComparer.InvariantCultureIgnoreCase);
 
     public bool IsAnonymous { get; private set; }
 
@@ -44,12 +47,14 @@ public partial class Credentials : IBasicCredentials
     public string Sk { get; set; }
     public string Uuid { get; set; }
 
-    #endregion
+    #endregion На текущий момент специфично только для Янднекс.Диска
 
     private readonly CloudSettings _settings;
 
     public Credentials(CloudSettings settings, string login, string password)
     {
+        Logger.Debug($"Starting authentication for {login}");
+
         _settings = settings;
         IsCacheUsed = false;
         Cookies = new CookieContainer();
@@ -124,12 +129,14 @@ public partial class Credentials : IBasicCredentials
             Password = string.Empty;
             PasswordCrypt = string.Empty;
             break;
+
         case 1:
             IsAnonymous = false;
             Login = loginParts[0].Trim();
             Password = password;
             PasswordCrypt = string.Empty;
             break;
+
         case 2:
             IsAnonymous = false;
             Login = loginParts[0].Trim();
@@ -150,6 +157,7 @@ public partial class Credentials : IBasicCredentials
             PasswordCrypt = password.Substring(sepPos + sep.Length);
             Password = password.Substring(0, sepPos);
             break;
+
         default:
             throw new InvalidCredentialException("Invalid credential format: " +
                 "too many # symbols in login string. See manuals.");
@@ -244,47 +252,34 @@ public partial class Credentials : IBasicCredentials
     private async Task GetBrowserCookiesAsync()
     {
         Cookies = new CookieContainer();
-        bool doRegularLogin = true;
+        bool doRegularLogin;
         BrowserAppResult response = null;
 
-        // Куки уже может быть сохранен в кеше на диске, проверяем
-        if (!string.IsNullOrEmpty(_settings.BrowserAuthenticatorCacheDir))
+        string key = string.IsNullOrWhiteSpace(Login) ? "anonymous" : Login;
+        if (_cookieCache.TryGetValue(key, out Tuple<DateTime, string> cacheItem))
         {
-            string path = null;
-
-            try
+            if (cacheItem.Item1 > DateTime.Now)
             {
-                string fileName = string.IsNullOrWhiteSpace(Login) ? "anonymous" : Login;
-                path = GetPath(_settings.BrowserAuthenticatorCacheDir, fileName);
+                response = JsonConvert.DeserializeObject<BrowserAppResult>(cacheItem.Item2);
 
-                if (System.IO.File.Exists(path))
-                {
-#if NET48
-                    string content = System.IO.File.ReadAllText(path);
-#else
-                    string content = await System.IO.File.ReadAllTextAsync(path).ConfigureAwait(false);
-#endif
-                    response = JsonConvert.DeserializeObject<BrowserAppResult>(content);
+                IsCacheUsed = true;
 
-                    IsCacheUsed = true;
-
-                    doRegularLogin = false;
-                    Logger.Info($"Browser authentication: cache is used");
-                }
+                doRegularLogin = false;
+                Logger.Info($"Browser authentication: cache is used");
             }
-            catch (Exception)
+            else
             {
-                // Request for user info using cached cookie failed
+                // Время хранения в кеше вышло, нужно делать обычный вход
+                _cookieCache.TryRemove(key, out _);
 
-                // Delete file with cache first
-                try
-                {
-                    System.IO.File.Delete(path);
-                }
-                catch (Exception) { }
                 // Then make regular login
                 doRegularLogin = true;
             }
+        }
+        else
+        {
+            // В кеше ничего нет, нужно делать обычный вход
+            doRegularLogin = true;
         }
 
         if (doRegularLogin)
@@ -294,12 +289,12 @@ public partial class Credentials : IBasicCredentials
 
             try
             {
-                response = await MakeLogin().ConfigureAwait(false);
+                response = await LoginAsync().ConfigureAwait(false);
             }
             catch (Exception e) when (e.Contains<HttpRequestException>())
             {
                 Logger.Error("Browser authentication failed! " +
-                    "Please check browser authentication component is running!");
+                    "Please check BrowserAuthenticator is configured and running!");
 
                 throw new InvalidCredentialException("Browser authentication failed! Browser component is not running!");
             }
@@ -307,7 +302,7 @@ public partial class Credentials : IBasicCredentials
             {
                 if (e.FirstOfType<AuthenticationException>() is AuthenticationException ae)
                 {
-                    string txt = string.Concat("Browser authentication failed! ", ae.Message);
+                    string txt = "Browser authentication failed! " + ae.Message;
                     Logger.Error(txt);
 
                     throw new InvalidCredentialException(txt);
@@ -323,44 +318,10 @@ public partial class Credentials : IBasicCredentials
             Logger.Info($"Browser authentication successful");
 
             // Сохраняем новый куки, если задан путь для кеша
-            if (!string.IsNullOrEmpty(_settings.BrowserAuthenticatorCacheDir) &&
-                AuthenticationUsingBrowser)
-            {
-                string fileName = string.IsNullOrWhiteSpace(Login) ? "anonymous" : Login;
-                string path = GetPath(_settings.BrowserAuthenticatorCacheDir, fileName);
-                try
-                {
-                    string content = JsonConvert.SerializeObject(response);
+            string json = JsonConvert.SerializeObject(response);
 
-                    try
-                    {
-                        if (!Directory.Exists(_settings.BrowserAuthenticatorCacheDir))
-                            Directory.CreateDirectory(_settings.BrowserAuthenticatorCacheDir);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(
-                            $"Directory for cache can not be created, " +
-                            $"remove attribute CacheDir in BrowserAuthenticator tag in configuration file! " +
-                            $"{ex.Message}");
-
-                        path = null;
-                    }
-
-                    if (path is not null)
-                    {
-#if NET48
-                        System.IO.File.WriteAllText(path, content);
-#else
-                        await System.IO.File.WriteAllTextAsync(path, content).ConfigureAwait(false);
-#endif
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error saving cookies to the file {path}: {ex.Message}");
-                }
-            }
+            _cookieCache[key] = new Tuple<DateTime, string>(DateTime.Now.AddHours(6), json);
+            Logger.Debug("Authentication cookie cached in memory for 6 hours");
         }
 
         if (response.Cookies is null)
@@ -405,28 +366,16 @@ public partial class Credentials : IBasicCredentials
 
     /// <summary>
     /// <para>Если аутентификация была через браузер,
-    /// стирает файл с кешем куки и запрашивает повторную аутентификацию через браузер.</para>
+    /// очищает кеш и запрашивает повторную аутентификацию через браузер.</para>
     /// <para>Возвращает true, если обновление прошло.</para>
     /// <para>Возвращает false, если обновление не прошло и надо отправить исключение.</para>
     /// </summary>
     /// <returns></returns>
     public bool Refresh(bool forceBrowserAuthentication = false)
     {
-        if (!string.IsNullOrEmpty(_settings.BrowserAuthenticatorCacheDir))
-        {
-            string fileName = string.IsNullOrWhiteSpace(Login) ? "anonymous" : Login;
-            string path = GetPath(_settings.BrowserAuthenticatorCacheDir, fileName);
+        string key = string.IsNullOrWhiteSpace(Login) ? "anonymous" : Login;
+        _cookieCache.TryRemove(key, out _);
 
-            try
-            {
-                if (System.IO.File.Exists(path))
-                    System.IO.File.Delete(path);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error deleting cookie file {path}: {ex.Message}");
-            }
-        }
         if ((AuthenticationUsingBrowser || forceBrowserAuthentication) &&
            !AuthenticationUsingBrowserDisabled)
         {
@@ -434,9 +383,8 @@ public partial class Credentials : IBasicCredentials
             CloudType saveCloudType = CloudType;
             // Если аутентификация не прошла, будет исключение
             GetBrowserCookiesAsync().Wait();
-            if (saveCloudType != CloudType || saveProtocol != Protocol)
-                return false;
-            return true;
+
+            return saveCloudType == CloudType && saveProtocol == Protocol;
         }
         return false;
     }
@@ -453,7 +401,7 @@ public partial class Credentials : IBasicCredentials
         return value;
     }
 
-    private async Task<(BrowserAppResult, string)> ConnectToBrowserApp()
+    private async Task<BrowserAppResult> ConnectToBrowserApp()
     {
         string url = _settings.BrowserAuthenticatorUrl;
 
@@ -492,7 +440,7 @@ public partial class Credentials : IBasicCredentials
             var responseText = await response.Content.ReadAsStringAsync();
             response.EnsureSuccessStatusCode();
             BrowserAppResult data = JsonConvert.DeserializeObject<BrowserAppResult>(responseText);
-            return (data, responseText);
+            return data;
         }
         catch (Exception)
         {
@@ -500,9 +448,9 @@ public partial class Credentials : IBasicCredentials
         }
     }
 
-    private async Task<BrowserAppResult> MakeLogin()
+    private async Task<BrowserAppResult> LoginAsync()
     {
-        (BrowserAppResult response, string responseHtml) = await ConnectToBrowserApp();
+        BrowserAppResult response = await ConnectToBrowserApp();
 
         if (response != null &&
             !string.IsNullOrEmpty(response.Sk) &&
@@ -523,37 +471,6 @@ public partial class Credentials : IBasicCredentials
             {
                 var cookie = new Cookie(item.Name, item.Value, item.Path, item.Domain);
                 Cookies.Add(cookie);
-            }
-
-            // Если аутентификация прошла успешно, сохраняем результат в кеш в файл,
-            // но только если запрошена аутентификация через браузер
-            if (!string.IsNullOrEmpty(_settings.BrowserAuthenticatorCacheDir) &&
-                AuthenticationUsingBrowser)
-            {
-                string path = GetPath(_settings.BrowserAuthenticatorCacheDir, Login);
-
-                try
-                {
-                    string dir = Path.GetDirectoryName(path);
-                    if (!Directory.Exists(dir))
-                        Directory.CreateDirectory(dir);
-                }
-                catch (Exception)
-                {
-                    string text = "Failed to create cache storage directory. " +
-                        "The attribute CacheDir of BrowserAuthenticator tag in configuration file must be removed!";
-                    Logger.Error(text);
-                    throw new AuthenticationException(text);
-                }
-                try
-                {
-#if NET48
-                    System.IO.File.WriteAllText(path, responseHtml);
-#else
-                    await System.IO.File.WriteAllTextAsync(path, responseHtml);
-#endif
-                }
-                catch (Exception) { }
             }
         }
         else

@@ -3,7 +3,8 @@
   <Import Project="..\Common.targets" />
 
   <PropertyGroup>
-    <NoWarn>$(NoWarn);NU1605</NoWarn>
+    <LangVersion>$(CommonLangVersion)</LangVersion>
+    <NoWarn>$(NoWarn);NU1605;IDE0079</NoWarn>
     <OutputType>library</OutputType>
     <TargetFrameworks>$(CommonTargetFrameworks)</TargetFrameworks>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
@@ -16,53 +17,39 @@
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net7.0-windows'">
-    <DefineConstants>$(DefineConstants);NET7_0_WINDOWS</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='net8.0-windows'">
-    <DefineConstants>$(DefineConstants);NET8_0_WINDOWS</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)|$(Platform)'=='netcoreapp3.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);NETCOREAPP3_0</DefineConstants>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DefineConstants>$(DefineConstants);TRACE;RELEASE</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7|AnyCPU'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8|AnyCPU'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.0|AnyCPU'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-  
- 
-  <ItemGroup Condition="'$(TargetFramework)'=='net7.0-windows' or '$(TargetFramework)'=='net8.0-windows'">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="runtime.native.System" Version="4.3.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.2" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.2" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.2" />
+    <PackageReference Include="System.Security.AccessControl" Version="6.0.1" />
+    <PackageReference Include="System.Security.Permissions" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'NET48'">
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net7.0-windows' or '$(TargetFramework)'=='net8.0-windows' or '$(TargetFramework)'=='net9.0-windows'">
     <PackageReference Include="Core.System.Configuration.Install" Version="1.1.0" />
     <PackageReference Include="Core.System.ServiceProcess" Version="2.0.1" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Condition="'$(TargetFramework)' == 'NET48'" Include="System.Configuration.Install" />
-    <Reference Condition="'$(TargetFramework)' == 'NET48'" Include="System.ServiceProcess" />
-    <Reference Condition="'$(TargetFramework)' == 'NET48'" Include="System.Xml.Linq" />
-    <Reference Condition="'$(TargetFramework)' == 'NET48'" Include="Microsoft.CSharp" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.2" />
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.2" />
   </ItemGroup>
 
 </Project>

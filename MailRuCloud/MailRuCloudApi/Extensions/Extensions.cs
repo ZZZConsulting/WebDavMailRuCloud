@@ -27,6 +27,7 @@ public static class Extensions
         long seconds = diff.Ticks / TimeSpan.TicksPerSecond;
         return seconds;
     }
+
     private static readonly DateTime Epoch = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
     internal static byte[] HexStringToByteArray(this string hex)
@@ -207,7 +208,8 @@ public static class Extensions
                         {
                             found = true;
                             yield return item;
-                        };
+                        }
+                        ;
                     }
                 }
             }
@@ -218,7 +220,8 @@ public static class Extensions
                 {
                     found = true;
                     yield return item;
-                };
+                }
+                ;
             }
         }
 

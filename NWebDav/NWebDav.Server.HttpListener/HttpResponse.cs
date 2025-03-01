@@ -33,17 +33,17 @@ namespace NWebDav.Server.HttpListener
         {
             switch (header)
             {
-                case "Content-Length":
-                    _response.ContentLength64 = long.Parse(value);
-                    break;
+            case "Content-Length":
+                _response.ContentLength64 = long.Parse(value);
+                break;
 
-                case "Content-Type":
-                    _response.ContentType = value;
-                    break;
+            case "Content-Type":
+                _response.ContentType = value;
+                break;
 
-                default:
-                    _response.Headers[header] = value;
-                    break;
+            default:
+                _response.Headers[header] = value;
+                break;
             }
         }
 

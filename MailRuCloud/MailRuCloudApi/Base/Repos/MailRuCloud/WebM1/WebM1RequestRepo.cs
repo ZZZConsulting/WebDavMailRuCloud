@@ -317,7 +317,7 @@ abstract class WebM1RequestRepo : MailRuBaseRepo, IRequestRepo
         return res;
     }
 
-    public async Task<RemoveResult> Remove(string fullPath)
+    public async Task<DeleteResult> Remove(string fullPath)
     {
         var req = await new RemoveRequest(HttpSettings, Auth, fullPath).MakeRequestAsync(_connectionLimiter);
         var res = req.ToRemoveResult();

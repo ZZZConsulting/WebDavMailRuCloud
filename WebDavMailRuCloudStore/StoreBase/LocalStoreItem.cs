@@ -103,7 +103,7 @@ namespace YaR.Clouds.WebDavStore.StoreBase
             {
                 var cts = new CancellationTokenSource();
 
-                // После, собственно, закачки файла, сервер может, например, считать хэш файла (Яндекс.Диск) и это может быть долго
+                // После, собственно, закачки файла, сервер может, например, считать хеш файла (Яндекс.Диск) и это может быть долго
                 // Чтобы клиент не отваливался по таймауту, пишем в ответ понемножку пробелы
                 void StreamCopiedAction()
                 {
@@ -114,7 +114,7 @@ namespace YaR.Clouds.WebDavStore.StoreBase
                             Thread.Sleep(7_000);
                             if (cts.IsCancellationRequested) break;
 
-                            httpContext.Response.Stream.WriteByte((byte) ' ');
+                            httpContext.Response.Stream.WriteByte((byte)' ');
                             httpContext.Response.Stream.Flush();
 
                             Logger.Log(LogLevel.Debug, "Waiting for server processing file...");
@@ -148,7 +148,6 @@ namespace YaR.Clouds.WebDavStore.StoreBase
             {
                 return DavStatusCode.InsufficientStorage;
             }
-
         }
 
         public async Task<StoreItemResult> CopyAsync(IStoreCollection destination, string name, bool overwrite, IHttpContext httpContext)

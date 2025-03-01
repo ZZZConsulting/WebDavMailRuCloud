@@ -17,7 +17,7 @@ using RequestHandlerFactory = YaR.Clouds.WebDavStore.RequestHandlerFactory;
 
 namespace YaR.Clouds.Console
 {
-    static class Payload
+    internal static class Payload
     {
         private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(typeof(Program));
 
@@ -48,7 +48,7 @@ namespace YaR.Clouds.Console
                 TwoFaHandler = LoadHandler(Config.TwoFactorAuthHandler),
                 Protocol = options.Protocol,
                 UserAgent = ConstructUserAgent(options.UserAgent, Config.DefaultUserAgent),
-                SecChUa = ConstructSecChUa( options.SecChUa, Config.DefaultSecChUa),
+                SecChUa = ConstructSecChUa(options.SecChUa, Config.DefaultSecChUa),
                 CacheListingSec = options.CacheListingSec,
                 MaxConnectionCount = options.MaxConnectionCount,
                 ListDepth = options.CacheListingDepth,
@@ -62,6 +62,7 @@ namespace YaR.Clouds.Console
                 Proxy = ProxyFabric.Get(options.ProxyAddress, options.ProxyUser, options.ProxyPassword),
 
                 DisableLinkManager = options.DisableLinkManager,
+                DetectActivityInterval = options.DetectActivityInterval,
 
                 CloudInstanceTimeoutMinutes = options.CloudInstanceTimeoutMinutes,
 
@@ -71,7 +72,6 @@ namespace YaR.Clouds.Console
 
                 BrowserAuthenticatorUrl = Config.BrowserAuthenticator?.Url,
                 BrowserAuthenticatorPassword = Config.BrowserAuthenticator?.Password,
-                BrowserAuthenticatorCacheDir = Config.BrowserAuthenticator?.CacheDir,
             };
 
             ShowInfo(options);
@@ -99,13 +99,14 @@ namespace YaR.Clouds.Console
             }
             catch (OperationCanceledException ce) when (ce.CancellationToken.IsCancellationRequested)
             {
-                Logger.Info("Cancelled");
+                Logger.Info("Canceled");
             }
             catch (HttpListenerException e) when (e.Message.ContainsIgnoreCase("conflicts with an existing"))
             {
                 // System.Net.HttpListenerException: 'Failed to listen on prefix 'http://127.0.0.1:12345/'
                 // because it conflicts with an existing registration on the machine.'
                 Logger.Error(e.Message);
+                Logger.Error("Please quit another copy of the program");
             }
             finally
             {
@@ -113,8 +114,6 @@ namespace YaR.Clouds.Console
             }
         }
 
-        private const string DefaultUserAgent =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
         private static string ConstructUserAgent(string fromOptions, string fromConfig)
         {
             if (!string.IsNullOrWhiteSpace(fromOptions))
@@ -122,20 +121,19 @@ namespace YaR.Clouds.Console
             if (!string.IsNullOrWhiteSpace(fromConfig))
                 return fromConfig;
 
-            Logger.Warn($"Configuration for User-Agent not found, using '{DefaultUserAgent}'");
-            return DefaultUserAgent;
+            Logger.Warn($"Configuration for User-Agent not found, using '{Config.DefaultUserAgentInternal}'");
+            return Config.DefaultUserAgentInternal;
         }
 
-        private const string DefaultSecChUa = "Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Google Chrome\";v=\"114\"";
         private static string ConstructSecChUa(string fromOptions, string fromConfig)
         {
-            if(!string.IsNullOrWhiteSpace(fromOptions))
+            if (!string.IsNullOrWhiteSpace(fromOptions))
                 return fromOptions;
-            if(!string.IsNullOrWhiteSpace(fromConfig))
+            if (!string.IsNullOrWhiteSpace(fromConfig))
                 return fromConfig;
 
-            Logger.Warn($"Configuration for sec-ch-ua not found, using '{DefaultSecChUa}'");
-            return DefaultUserAgent;
+            Logger.Warn($"Configuration for sec-ch-ua not found, using '{Config.DefaultSecChUaInternal}'");
+            return Config.DefaultSecChUaInternal;
         }
 
 
@@ -173,7 +171,7 @@ namespace YaR.Clouds.Console
                     if (httpListenerContext == null)
                         break;
 
-                    HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity) httpListenerContext.User.Identity;
+                    HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)httpListenerContext.User.Identity;
                     IHttpContext httpContext = new HttpBasicContext(httpListenerContext, i => i.Name == identity.Name && i.Password == identity.Password);
 
                     await semclo.WaitAsync(CancelToken.Token);
@@ -189,7 +187,6 @@ namespace YaR.Clouds.Console
                         {
                             semclo.Release();
                         }
-
                     }, CancelToken.Token);
                 }
             }
@@ -231,6 +228,8 @@ namespace YaR.Clouds.Console
             Logger.Info($"Wait for 100-Continue timeout: {options.Wait100ContinueTimeoutSec} sec");
             Logger.Info($"Cloud & protocol: defined by login and the rest parameters");
             Logger.Info($"Cloud instance (server+login) expiration timeout: {options.CloudInstanceTimeoutMinutes} min");
+            Logger.Info($"Track changes on Yandex.Disk made behind the Emulator: " +
+                $"{(options.DetectActivityInterval == 0 ? "disabled" : $"every {options.DetectActivityInterval} sec")}");
             Logger.Info($"Folder cache expiration timeout: {options.CacheListingSec} sec");
             Logger.Info($"List query folder depth: {options.CacheListingDepth}");
             Logger.Info($"Use locks: {options.UseLocks}");

@@ -1,19 +1,10 @@
 ﻿namespace YaR.Clouds.WebDavStore;
 
-public class BrowserAuthenticatorInfo
+public class BrowserAuthenticatorInfo(string url, string password)
 {
-    public string Url { get; private set; }
+    public string Url { get; private set; } = url;
 
-    public string Password { get; private set; }
-
-    public string CacheDir { get; private set; }
-
-    public BrowserAuthenticatorInfo(string url, string password, string cacheDir )
-    {
-        Url = url;
-        Password = password;
-        CacheDir = cacheDir;
-    }
+    public string Password { get; private set; } = password;
 }
 
 public static class BrowserAuthenticator

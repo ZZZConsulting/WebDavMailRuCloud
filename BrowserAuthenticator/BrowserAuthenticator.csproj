@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <LangVersion>$(CommonLangVersion)</LangVersion>
-    <TargetFrameworks>net7.0-windows;net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net9.0-windows;net8.0-windows</TargetFrameworks>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -16,7 +16,7 @@
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
     <Authors>YaR229 and Contributors</Authors>
     <Product>BrowserAuthenticator for WebDAV emulator</Product>
-    <Copyright>MIT License, Copyright (c) 2024 YaR229 and Contributors</Copyright>
+    <Copyright>MIT License, Copyright (c) 2025 YaR229 and Contributors</Copyright>
     <PackageIcon>cloud.ico</PackageIcon>
     <RepositoryUrl>https://github.com/ZZZConsulting/WebDavMailRuCloud</RepositoryUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -30,8 +30,27 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" />
+	<!--
+	From here: https://github.com/MicrosoftEdge/WebView2Feedback/issues/4924
+	This is workaround for the error:
+	Found conflicts between different versions of "WindowsBase" that could not be resolved.
+    There was a conflict between "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" and "WindowsBase, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+    "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" was chosen because it was primary and "WindowsBase, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" was not.
+    References which depend on "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" [C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.13\ref\net8.0\WindowsBase.dll].
+	...
+    References which depend on or have been unified to "WindowsBase, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" [].
+	-->
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3065.39" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="runtime.native.System" Version="4.3.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>

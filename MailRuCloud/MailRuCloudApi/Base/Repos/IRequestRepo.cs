@@ -42,7 +42,7 @@ public interface IRequestRepo
 
     Task<UnpublishResult> Unpublish(Uri publicLink, string fullPath);
 
-    Task<RemoveResult> Remove(string fullPath);
+    Task<DeleteResult> Remove(string fullPath);
 
     Task<RenameResult> Rename(string fullPath, string newName);
 

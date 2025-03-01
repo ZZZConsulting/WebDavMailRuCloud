@@ -32,9 +32,9 @@ internal static class DtoImportMailRu
     }
 
 
-    public static RemoveResult ToRemoveResult(this CommonOperationResult<string> data)
+    public static DeleteResult ToRemoveResult(this CommonOperationResult<string> data)
     {
-        var res = new RemoveResult
+        var res = new DeleteResult
         {
             IsSuccess = data.Status == 200
         };

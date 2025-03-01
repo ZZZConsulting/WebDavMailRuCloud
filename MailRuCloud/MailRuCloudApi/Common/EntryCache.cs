@@ -21,15 +21,18 @@ public class EntryCache : IDisposable
         /// а менеджер не обладает информацией о наличии или отсутствии файла в облаке.
         /// </summary>
         Unknown,
+
         /// <summary>
         /// Когда менеджер кеша имеет в кеше всю папку, где должен быть файл,
         /// но файла такого в папке в кеше нету, то его нет и в облаке.
         /// </summary>
         NotExists,
+
         /// <summary>
         /// Когда менеджер имеет в кеше файл и возвращает его.
         /// </summary>
         Entry,
+
         /// <summary>
         /// Когда менеджер имеет в кеше папку, но в кеше отсутствует ее содержимое, которое надо считать с сервера.
         /// </summary>
@@ -56,16 +59,17 @@ public class EntryCache : IDisposable
     private readonly SemaphoreSlim _rootLocker = new SemaphoreSlim(1);
 
     public delegate Task<CheckUpInfo> CheckOperations();
+
     private readonly CheckOperations _activeOperationsAsync;
     private readonly System.Timers.Timer _checkActiveOperationsTimer;
-    // Проверка активных операций на сервере и наличия внешних изменений в облаке мимо сервиса
-    private readonly TimeSpan _opCheckPeriod = TimeSpan.FromSeconds(15);
+
     /// <summary>
     /// Сохраняемая с сервера и пополняемая при операциях данного сервиса информация о состоянии Диска,
     /// для выявление внешних операций на Диске, минуя данный сервис, чтобы вовремя
     /// сбросить кеш и обновить информацию с сервера.
     /// </summary>
     private CheckUpInfo.CheckInfo _lastComparedInfo;
+
     /// <summary>
     /// Блокировщик доступа к <see cref="_lastComparedInfo"/>
     /// </summary>
@@ -80,6 +84,7 @@ public class EntryCache : IDisposable
         /// Отметка о времени размещения в кеше.
         /// </summary>
         public DateTime CreationTime { get; set; }
+
         /// <summary>
         /// Entry - файл, папка или link в кеше, если не null.
         /// Или null, если сохраняется информация о том,
@@ -116,6 +121,7 @@ public class EntryCache : IDisposable
     /// </summary>
     private readonly Dictionary<string /* full path */, CounterClass> _registeredOperationPath =
         new(StringComparer.InvariantCultureIgnoreCase);
+
     /// <summary>
     /// Блокировщик доступа к <see cref="_registeredOperationPath"/>>
     /// </summary>
@@ -126,7 +132,7 @@ public class EntryCache : IDisposable
         public int Value;
     }
 
-    public EntryCache(TimeSpan expirePeriod, CheckOperations activeOperationsAsync)
+    public EntryCache(TimeSpan expirePeriod, CheckOperations activeOperationsAsync, int detectActivityInterval)
     {
         _expirePeriod = expirePeriod;
         IsCacheEnabled = Math.Abs(_expirePeriod.TotalMilliseconds) > 0.01;
@@ -146,25 +152,34 @@ public class EntryCache : IDisposable
             };
             _cleanTimer.Elapsed += RemoveExpired;
 
-            if (_activeOperationsAsync is not null && expirePeriod.TotalMinutes >= 1)
+            if (_activeOperationsAsync is not null && expirePeriod.TotalSeconds >= 30 && detectActivityInterval > 0)
             {
+                if (detectActivityInterval < 4)
+                    detectActivityInterval = 4;
+                if (detectActivityInterval > 60)
+                    detectActivityInterval = 60;
+
+                // Проверка активных операций на сервере и наличия внешних изменений в облаке мимо сервиса
+                TimeSpan checkPeriod = TimeSpan.FromSeconds(detectActivityInterval);
+
+                // Для инициализации коллекции счетчиков, обращение к серверу за актуальными значениями
+                Task.Run(() => CheckActiveOpsAsync());
+
                 // Если кеш достаточно длительный, делаются регулярные
                 // проверки на изменения в облаке
                 _checkActiveOperationsTimer = new System.Timers.Timer()
                 {
-                    Interval = _opCheckPeriod.TotalMilliseconds,
+                    Interval = checkPeriod.TotalMilliseconds,
                     Enabled = true,
                     AutoReset = true
                 };
                 _checkActiveOperationsTimer.Elapsed += CheckActiveOpsAsync;
-
-                // Для инициализации коллекции счетчиков, обращение к серверу за актуальными значениями
-                CheckActiveOpsAsync();
             }
         }
     }
 
     #region IDisposable Support
+
     private bool _disposedValue;
 
     protected virtual void Dispose(bool disposing)
@@ -197,7 +212,8 @@ public class EntryCache : IDisposable
     {
         Dispose(true);
     }
-    #endregion
+
+    #endregion IDisposable Support
 
     //public TimeSpan CleanUpPeriod
     //{
@@ -504,7 +520,7 @@ public class EntryCache : IDisposable
         });
 
         List<string> paths = [];
-        foreach (var op in info.ActiveOperations)
+        foreach (var op in info.ActiveOperations ?? [])
         {
             if (!string.IsNullOrEmpty(op.SourcePath))
             {

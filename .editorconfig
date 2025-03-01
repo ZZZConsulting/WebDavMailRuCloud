@@ -3,7 +3,7 @@ root = true
 
 [*]
 vsspell_section_id = b0252c83892c418e88e4674d7eb14041
-vsspell_ignored_words_b0252c83892c418e88e4674d7eb14041 = deduplicate|repo|repos|uninstall|Yad|maxthreads|maxconnections|Auth|Versioning|App|codec|Subentries|Utc|refact|nq|unshare|Deserialize|Configurator|csrf|uuid|uid|Kvp|etime|utime|mtime|ctime|dtime|serializer|Ua|Relogin|dest|dst|weblink|Ycrid|ret|templated|Photounlim|Sha|tsa|crypto|Sdc|Denom|util
+vsspell_ignored_words_b0252c83892c418e88e4674d7eb14041 = ubuntu|namespaces|xml|charset|utf|hardlinked|Unpublish|timestamp|intapi|mkdir|Json|mpfs|deduplicate|repo|repos|uninstall|Yad|maxthreads|maxconnections|Auth|Versioning|App|codec|Subentries|Utc|refact|nq|unshare|Deserialize|Configurator|csrf|uuid|uid|Kvp|etime|utime|mtime|ctime|dtime|serializer|Ua|Relogin|dest|dst|weblink|Ycrid|ret|templated|Photounlim|Sha|tsa|crypto|Sdc|Denom|util|Yandex|Яндекс|https|Oid|oid|Oids|oids
 
 # C# files
 [*.cs]

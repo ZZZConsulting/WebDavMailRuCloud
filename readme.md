@@ -1,45 +1,84 @@
-﻿# The **WebDAV emulator** for RU-clouds: Cloud.Mail.Ru & Disk.Yandex.Ru
+﻿# The **WebDAV Emulator** for RU-clouds: Cloud.Mail.Ru & Disk.Yandex.Ru
 
 ---
-
-The root <a href="https://github.com/yar229/WebDavMailRuCloud">project</a> by <img src="https://avatars.githubusercontent.com/u/5150160?s=48&v=4" height="15 pt" width="15 pt"/>YaR229
-
-<a href="https://github.com/yar229/WebDavMailRuCloud/releases/latest"><img src="https://img.shields.io/github/v/release/yar229/WebDavMailRuCloud?include_prereleases"></a>
-<img src="https://img.shields.io/github/last-commit/yar229/WebDavMailRuCloud" target="_blank"> <img src="https://img.shields.io/github/downloads/yar229/WebDavMailRuCloud/total" align="right" target="_blank">
-
----
-
-The fork <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud">project</a> by ZZZConsulting
 
 <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud/releases/latest"><img src="https://img.shields.io/github/v/release/ZZZConsulting/WebDavMailRuCloud?include_prereleases"></a>
 <img src="https://img.shields.io/github/last-commit/ZZZConsulting/WebDavMailRuCloud" target="_blank"> <img src="https://img.shields.io/github/downloads/ZZZConsulting/WebDavMailRuCloud/total" align="right" target="_blank">
 
+
+This is the <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud">ZZZ-fork</a> by <img src="https://avatars.githubusercontent.com/u/121279800?v=4&size=16" height="16pt" width="16pt"/> ZZZConsulting.
+
+The original project by <img src="https://avatars.githubusercontent.com/u/5150160?s=48&v=4" height="15 pt" width="15 pt"/>YaR229
+resides here: <a href="https://github.com/yar229/WebDavMailRuCloud">https://github.com/yar229/WebDavMailRuCloud/</a>
+
+*К сожалению, оригинальный проект автором слегка подзаброшен и пребывает в подвешенном состоянии.*
+*С большими надеждами ждем возвращения оригинального проекта к жизни!*
+*Ну, а пока этого не случилось,.. продолжаем попытки поддержать проект на плаву.*
+
 ---
 
-@ZZZConsulting:
+# Multilanguage README
 
-## Важно!
-Чтобы обновленная версия с исправлением удаления быстрее дошла до пользователей,
-тестирование было незначительным, не продолжительным и на весьма ограниченном наборе сценариев.
-Перед полноценным использованием новой версии РЕКОМЕНДУЕТСЯ проверить работу
-со своим облачным Диском - что-нибудь создать, загрузить, удалить и т.д, убедиться,
-что нет сбоев и все работает верно. А в случае ошибок - писать в Issue.
-Так же, рекомендуется сохранить предыдущую версию, чтобы было к чему вернуться, в случае чего.
+[![en](https://img.shields.io/badge/lang-en-red.svg)](./readme.en.md)
+[![ru](https://img.shields.io/badge/lang-ru-green.svg)](./readme.md)
 
-Последняя протестированная версия API Яндекса - 383.0.0.
+---
 
-### Последние изменения:
+### Requirements <img src="https://habrastorage.org/files/72e/83b/159/72e83b159c2446b9adcdaa03b9bb5c55.png" width=200 align="right"/>
+* [Windows](#windows) - [.NET Framework 4.8](https://dotnet.microsoft.com/en-us/download/dotnet-framework) / [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) / [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+* [Linux](#linux) - [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) / [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+* [OS X](#mac-os-x) - [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) / [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 
-1) Исправлено удаление для Яндекс.Диска, которое перестало работать какое-то время назад.
-2) Значительно переработало кеширование. В частности, после удаления файла из папки,
-кеш папки больше не сбрасывается и не перечитывается с сервера.
-Когда в папке тысячи файлов разница во времени работы существенна.
-Обратной стороной стали фантомы в кеше, победить которые до конца не выходит.
-Если проблема фантомов начинает мешать, стоит уменьшить время кеширования и/или
-через браузер делать действия приводящее к сбросу кеша (см. следующий пункт).
-3) Если операция с Диском идет, минуя данный сервис, то сервис о ней не знает,
-а значит кеш теряет актуальность.
-В данной версии улучшен контроль внешний изменений на Диске через историй изменений файлов.
+---
+
+## Изменения
+
+- По ощущениям Яндекс полностью закончил переход на новый API, старые методы эмуляции браузера по работе с файлами
+работать перестали. Пришло время полной заменены методов работы с серверами Яндекс.Диска под новый API.
+
+- Как всегда, новая версия выпускается 'чем быстрее, тем лучше', что означает, что тестирование было минимальным
+и только основных функций - прочитать и записать файл, создать и удалить папку.
+Перед тем, как работать со своими данными с новой версией, **настоятельно рекомендуется** проверить на своей
+учетной записи свой обычный набор операций - какие-то Ваши операции с файлами могут не входить
+в стандартный тестируемый набор, или иметь отличия в зависимости от учетной записи
+(Яндекс раскатывает изменения по учетным записям постепенно, а не всем разом).
+
+- Устаревшие версии для Mono, .NET Framework, .NET Core и .NET выведены из поддержки,
+т.к. потребность в них не понятна, а поддержка требуется затрат.
+При необходимости (реальной) поддержку можно вернуть - создавайте Issue
+и, пожалуйста, напишите хотя бы минимальное *зачем* - ибо интересно же где такая
+потребность возникает без возможности перехода на более новую версию.
+
+- При работе с Яндекс.Диском с аутентификацией через `BrowserAuthenticator` полученный куки
+кешировался на диске в папке (папка задавалась атрибутом `CacheDir` тэга `BrowserAuthenticator` конфигурационного файла).
+В новой версии Эмулятора кеш на диск не пишется, вместо этого сохраняется в памяти на 6 часов и теряется при перезапуске программы.
+Если папка под кеш файлов с куки задавалась в конфигурационном файле и использовалась, настоятельно рекомендуется
+удалить эту папку вместе с содержимым.
+
+- Для работы с Яндекс.Диском было два набора (репозитория) методов - сохранялся оригинальный набор от Yar229,
+а новые методы формировали новый набор. Поскольку методы исходного набора работать перестали, они были полностью
+замещены новым набором - с новой версии для Яндекса только один протокол или набор API.
+Следствием объединения стало изменение отслеживания завершения операций.
+Исходный набор не ожидал завершение обработки операции сервером, а делал это только при следующем обращении,
+методы нового набора всегда ожидает завершения, и только потом позволяют продолжить.
+Так же штатным стало отслеживание изменений на Яндекс.Диске, сделанных минуя Эмулятор, чего не было в исходном наборе.
+Если регулярный мониторинг не требуется, установка параметра `detect-activity-interval` в `0`
+полностью отключает регулярное обращение к серверу и отслеживание изменений.
+
+- Не исправлялись не проверялись функции работы с media - фото, альбомы, ссылки на файлы, шифрование и многое-много другое,
+что не входит в минимальный базовый набор операций с файлами и папками, пожалуйста, имейте это в виду.
+
+- Удалено параллельное чтение в несколько соединений папок с большим количеством файлов.
+При переходе к новому API вылезли некоторые проблемы, для ускорения решения которых были принесены жертвы.
+Одновременно с этим, более разумным кажется не чтение в несколько потоков с сервера,
+а ускорение разбора возвращаемого сервером xml.
+
+- Все используемые сборки обновлены до последних версий (чего не было крайне давно).
+Есть вероятность, что на каких-то машинах новая версия может сбоить как раз по причине версий сборок.
+Особенно это актуально для не Windows систем - Linux и MacOS, если такие пользователи здесь еще остались.
+
+- Ну, и с началом весны нас всех!
+
 
 
 #### Пароль для Disk.Yandex.Ru
@@ -79,74 +118,18 @@ The fork <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud">project</a
 
 ---
 
+#### MRClient.exe
 
-### Requirements <img src="https://habrastorage.org/files/72e/83b/159/72e83b159c2446b9adcdaa03b9bb5c55.png" width=200 align="right"/>
-* [Windows](#windows)  - [.NET Framework 4.8](https://dotnet.microsoft.com/en-us/download/dotnet-framework) / [.NET Core 3.1](https://dotnet.microsoft.com/en-us/download/dotnet/3.1) / [.NET 5.0](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) / [.NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) / [.NET 7.0](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) / [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-* [Linux](#linux) - Mono 6.8 / [.NET Core 3.1](https://dotnet.microsoft.com/en-us/download/dotnet/3.1) / [.NET 5.0](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) / [.NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) / [.NET 7.0](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) / [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-* [OS X](#mac-os-x) - Mono 6.8 / [.NET Core 3.1](https://dotnet.microsoft.com/en-us/download/dotnet/3.1) / [.NET 5.0](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) / [.NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) / [.NET 7.0](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) / [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-
----
-
-#### Usage &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/eng.png" height="15" width="50"/>&nbsp;ENG
-```
-  -p, --port            (Default: 801) WebDAV emulator port or several ports separated by `,`.
-  -h, --host            (Default: "http://127.0.0.1") WebDAV emulator host with protocol
-                        (http://* for http://0.0.0.0).
-  --maxthreads          (Default: 5) Maximum concurrent listening connections to the service.
-  --maxconnections      (Default: 10) Maximum concurrent connections to cloud server per instance.
-  --use-locks           (Default: false) Use locking feature.
-  --cache-listing       (Default: 30) Timeout of in-memory cache of file and folder names
-                        of the cloud in seconds. 0 disables the cache.
-  --cache-listing-depth (Default: 1) Folder hierarchy depth when listing folders content.
-                        Always equals 1 when cache-listing > 0.
-                        To maximize performance
-                        set cache-listing-depth=1 and cache-listing between 600 and 1800.
-  --use-deduplicate     (Default: false) Enable deduplication (upload speedup, put by hash),
-                        see Using deduplication readme section.
-  --disable-links       (Default: false) Disable support for shared folder and links
-                        stored in item.links.wdmrc files.
-
-  --protocol            (Default: Autodetect) Cloud protocol
-                        * Autodetect - see Auto-detect protocol readme section
-                        * WebM1Bin   - (Cloud.Mail.Ru) mix of mobile and DiskO protocols
-                        * WebV2      - (Cloud.Mail.Ru) [deprecated] desktop browser protocol
-                        * YadWeb     - (Disk.Yandex.Ru) desktop browser protocol,
-                                       see Disk.Yandex.Ru readme section
-
-  --install <service name>          Install as Windows service (Windows .Net 4.8/7.0/8.0 versions only).
-  --install-display <display name>  'Display name' of the service when installed as Windows service
-                                    (Windows .Net 4.8/7.0/8.0 versions only).
-  --uninstall <service name>        Uninstall Windows service (Windows .Net 4.8/7.0/8.0 versions only).
-
-  --proxy-address <socks|https|http>://<address>:<port>   Use proxy
-  --proxy-user <username>                                 Proxy user name
-  --proxy-password <password>                             Proxy password
-
-  --100-continue-timeout-sec  (Default: 1) Timeout in seconds,
-                              to wait until the 100-Continue is received if chuck transfer.
-  --response-timeout-sec      (Default: 100) Timeout in seconds,
-                              to wait until 1-st byte from server is received.
-  --read-write-timeout-sec    (Default: 300) Timeout in seconds,
-                              the maximum duration of read or write operation.
-                              If your Internet connection is slow
-                              or you upload/download large files increase the value.
-  --cloud-instance-timeout    (Default: 30) Cloud instance (server+login) expiration timeout in minutes.
-                              On request the service creates one instance per cloud and login.
-                              After specified period of time without requests the instance is recycled.
-
-  --help                Display this help screen.
-  --version             Display version information.
-
-  -user-agent           Overrides default 'user-agent' header in requests to cloud servers.
-  -sec-ch-ua            Overrides default 'sec-ch-ua' header in requests to cloud servers.
-```
-
-#### Параметры &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/rus.png" height="15" width="30"/>&nbsp;RUS
 ```
   -p, --port            (По умолчанию: 801) Порт (или список портов через `,`),
                         на которых эмулятор WebDAV принимает подключения.
   -h, --host            (По умолчанию: "http://127.0.0.1") адрес и протокол для приема
                         входящих подключений к эмулятору WebDAV (http://* для http://0.0.0.0).
+
+  --proxy-address <socks|https|http>://<address>:<port>   Установка прокси-сервера
+  --proxy-user <username>                                 Установка user name для прокси-сервера
+  --proxy-password <password>                             Установка password для прокси-сервера
+
   --maxthreads          (По умолчанию: 5) Максимальное количество одновременно
                         обрабатываемых подключений к эмулятору WebDAV.
   --maxconnections      (По умолчанию: 10) Максимальное количество соединений
@@ -161,16 +144,21 @@ The fork <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud">project</a
                         Для максимизации производительности задать
                         cache-listing-depth = 1 и cache-listing от 600 до 1800.
   --use-deduplicate     (По умолчанию: false) Включить deduplication
-                        (ускорение загрузки по хэшу), см. раздел deduplication.
+                        (ускорение загрузки по хешу), см. раздел deduplication.
   --disable-links       (По умолчанию: false) Отключить поддержку общих папок и ссылок,
                         хранимых в файлах item.links.wdmrc.
+  --detect-activity-interval
+                        (По умолчанию: 15) Интервал в секунда, как часто проверять изменения
+                        на Яндекс.Диске, сделанные не через Эмулятор, чтобы сбросить кеш,
+                        0 для отключения регулярной проверки.
+                        Диапазон допустимых значений - от 4 до 60 секунд.
 
   --protocol            (По умолчанию: Autodetect) Протокол работы с облаком
                         * Autodetect - см. раздел Auto-detect protocol
                         * WebM1Bin   - (Cloud.Mail.Ru) гибрид для мобильных и DiskO
                         * WebV2      - (Cloud.Mail.Ru) [устарел] протокол для браузера на ПК
                         * YadWeb     - (Disk.Yandex.Ru) протокол браузера на ПК,
-                                       см. раздел Disk.Yandex.Ru readme
+                                       см. раздел Disk.Yandex.Ru README
 
   --install <service name>          Установка сервисом Windows
                                     (только для сборок для Windows версий .Net 4.8/7.0/8.0).
@@ -178,10 +166,6 @@ The fork <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud">project</a
                                     (только для сборок для Windows версий .Net 4.8/7.0/8.0).
   --uninstall <service name>        Удаление сервиса из Windows
                                     (только для сборок для Windows версий .Net 4.8/7.0/8.0).
-
-  --proxy-address <socks|https|http>://<address>:<port>   Установка прокси-сервера
-  --proxy-user <username>                                 Установка user name для прокси-сервера
-  --proxy-password <password>                             Установка password для прокси-сервера
 
   --100-continue-timeout-sec  (По умолчанию: 1) Таймаут в секундах
                               на получение 100-Continue от сервера при блочной передаче.
@@ -206,7 +190,7 @@ The fork <a href="https://github.com/ZZZConsulting/WebDavMailRuCloud">project</a
 
 ---
 
-#### Hasher.exe usage
+#### Hasher.exe
 
 Calculating hashes for local files
 
@@ -226,9 +210,9 @@ Calculating hashes for local files
 
 ---
 
-### Using deduplication (upload speedup, put by hash)
+### Использование deduplication (ускорение загрузки по хешу вместо содержимого)
 
-Edit `<Deduplicate>` section in `wdmrc.config`:
+Настроить раздел `<Deduplicate>` в `wdmrc.config`:
 
 ```
   <Deduplicate>
@@ -254,74 +238,11 @@ Edit `<Deduplicate>` section in `wdmrc.config`:
     </Rules>
   </Deduplicate>
 ```
-Then run with `--use-deduplicate` command line key.
+Затем запустить с параметром `--use-deduplicate` в командной строке.
 
 ---
 
-### Cloud protocol and `Autodetect` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/eng.png" height="15" width="50"/>&nbsp;ENG
-
-Direct use of WebDAV with Cloud.Mail.Ru or Disk.Yandex.Ru is full of problems.
-The WebDAV emulator is made to solve the problems using unofficial APIs.
-We call the subset of API methods used to achieve a desired result a `protocol`.
-When user going to reach a cloud through WebDAV emulator,
-the WebDAV emulator must choose:
-* what cloud should be used (Cloud.Mail.Ru or Disk.Yandex.ru),
-* what protocol (API) must be used,
-* what kind of authentication must be used (basic login+password or browser).
-
-***Autodetect***. How it works
-
-Step **1**. The Cloud
-
-If user specified `login` in email style (e.g. John@yandex.ru or John@mail.ru)
-the Cloud is determined by email domain.
-Otherwise (e.g. `login` is John) the Cloud is determined by `protocol` parameter of the application.
-
-Step **2**. The Protocol
-
-In case when the Cloud is determined and the Protocol is not,
-the WebDAV emulator uses
-* WebM1Bin protocol for Cloud.Mail.Ru and
-* YadWeb protocol for Disk.Yandex.Ru.
-
-Step **3**. The Authentication type
-
-The WebM1Bin protocol has only one type of authentication - `login` and `password`.
-
-The YadWeb protocol for Disk.Yandex.Ru has two types of authentication:
-
-* `login` and `password`
-and
-* browser authentication using `BrowserAuthenticator` application.
-
-By default the login+password authentication is used.
-
-If `BrowserAuthenticator` is configured in `wdmrc.config` and
-user `password` equals to `BrowserAuthenticator` password
-the browser authentication is used.
-
-User can give the WebDAV emulator the suggestion which type of authentication to use by appending symbol `!` or `?` in `login` string at leftmost position.
-`?` means the browser authentication must be used.
-`!` means the browser authentication must **not** be used.
-
-The leftmost symbols `!` and `?` are removed from login while talking to clouds.
-
-If browser authentication is not used, a user have to fill `password` with password of cloud account.
-The WebDAV emulator with YadWeb emulates browser, so the main password of the account must be used to connect to the cloud!
-Application password generated in Yandex account will fail!
-
-If browser authentication is used, a user have two options.
-In both cases `BrowserAuthenticator` application is going to authenticate incoming request by matching incoming password against password on Settings window.
-The first options is to pass to WebDAV emulator exact value of password on Settings window of the `BrowserAuthenticator` application.
-The second option is to pass empty password to WebDAW emulator. That means WebDAW emulator should take the password from password attribute of the `BrowserAuthenticator` tag in `wdmrc.config`.
-
-If you change password in Settings window of `BrowserAuthenticator` application quite often,
-you may want to setup password once in `wdmrc.config` and use login with empty password.
-
-If you believe some one except you can try to connect to you `BrowserAuthenticator` application,you can put wrong password into password attribute of the `BrowserAuthenticator` tag in `wdmrc.config`
-and use login and correct password (equal to password in Settings window of `BrowserAuthenticator` application) while connecting to WebDAW emulator.
-
-### Cloud protocol and `Autodetect` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/rus.png" height="15" width="30"/>&nbsp;RUS
+### Cloud protocol and `Autodetect`
 
 Использование WebDAV с облаками Cloud.Mail.Ru и Disk.Yandex.Ru не лишено проблем.
 Эмулятор WebDAV создан чтобы решить эти проблемы с использованием неофициального APIs.
@@ -388,62 +309,14 @@ and use login and correct password (equal to password in Settings window of `Bro
 
 ---
 
-### Disk.Yandex.Ru &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/eng.png" height="15" width="50"/>&nbsp;ENG
-
-Issues of WebDAV by Disk.Yandex.Ru
-
-* It seems like WebDAV of Disk.Yandex.Ru is limited by speed since 2019.
-* After file uploading Yandex servers calculating hash.
-  E.g. for a 10GB file it may take ~1..2 minutes depending on server load.
-  So most of WebDAV clients drops connection on timeout.
-* There's no WebDAV info in official help now. WTF?
-* Since 2019 Yandex states that WebDAV is OK for all supported applications made by Yandex,
-  also Yandex does not support and does not guarantee correct work
-  of any third party application with their WebDAV.
-
-To bypass the limit issue the WebDAV emulator uses the unofficial Disk.Yandex.Ru Web API.
-The salvation have 2 steps:
-
-**1**) Disk.Yandex.Ru WebDAV authentication
-
-To get in to Disk.Yandex.Ru you have to be authenticated by Yandex by any of two ways:
-
-* By `login` & `password` only.
-  The account must be configured for log in using login and password only.
-  Yandex account security have an option to create Application passwords.
-  Do not use Application password when you connecting to this WebDAW service!
-  You **must** use the main account password only
-  because this service emulates you on the web using browser.
-  Fill the `login` field with email (e.g. John@yandex.ru instead of John).
-
-* By standard web site authentication using specially designed `browser` called `BrowserAuthenticator`.
-  The BrowserAuthenticator application is designed to be run at Windows startup.
-  It hides in system tray and waits for incoming authentication
-  request from the WebDAV emulator.
-  When requested, BrowserAuthenticator shows a browser window allowing you to log into cloud
-  using `login` and `password` or `login` and `password` and SMS or even QR code.
-  When you successfully logged in, the program takes all data from the browser
-  and sends it back to the WebDAV emulator, then the service talks
-  to cloud servers using you authentication information.
-  Because your authentication information is used, you **must** keep cache with the information **secured**!
-  For more information read the `BrowserAuthenticator` section.
-
-**2**) File operations with Disk.Yandex.Ru
-
-Once authenticated all file operations such as reading, writing, creating, deleting,
-and so on are available for use.
-Because the WebDAV emulator emulates you using a browser the Issue is not applied.
-Unfortunately, there is no guarantee the service is going to work infinitely long.
-Time to time Yandex makes unexpected changes in their programs.
-
-### Disk.Yandex.Ru &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/rus.png" height="15" width="30"/>&nbsp;RUS
+### Disk.Yandex.Ru
 
 «Косяк» с WebDAV от Disk.Yandex.Ru
 
 * С конца 2019 года при загрузке файлов на Disk.Yandex.Ru по WebDAV были введены ограничения.
-* После загрузки файла, сервера Яндекса стали столь долго подсчитывать хэши файлов,
+* После загрузки файла, сервера Яндекса стали столь долго подсчитывать хеши файлов,
   что общая скорость оказать значительно ниже приемлемого уровня.
-  Например, после загрузки 10 ГБ расчет хэша может занять ~1-2 минуты,
+  Например, после загрузки 10 ГБ расчет хеша может занять ~1-2 минуты,
   из-за чего большинство клиентов отваливаются по таймауту.
 * При этом сам Яндекс заявляет, что в WebDAV все хорошо, их же приложения с WebDAV прекрасно работают,
   а за работу чужих приложений с их WebDAV они не отвечают.
@@ -485,72 +358,7 @@ Time to time Yandex makes unexpected changes in their programs.
 
 ---
 
-### BrowserAuthenticator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/eng.png" height="15" width="50"/>&nbsp;ENG
-
-is a specially designed `browser` meant be run at Windows startup.
-It hides in system tray and waits for incoming authentication
-request from the WebDAV emulator.
-When requested, BrowserAuthenticator shows a browser window allowing you to log into cloud
-using `login` and `password` only
-or `login` and `password` and SMS code
-or even QR code.
-When you successfully logged in, the program takes all data from the browser
-and sends it back to the WebDAV emulator, then the service talks
-to cloud servers using you authentication information.
-
-**Remember!**
-
-The WebDAV emulator impersonates you using you credentials and security cookies taken from the `BrowserAuthenticator` application when you logged in!
-Both the WebDAV emulator and the `BrowserAuthenticator` application store the security information on drives.
-**Read the following instruction very carefully!**
-
-***Step-by-step setup of BrowserAuthenticator***
-
-1. You need to choose the location for the `BrowserAuthenticator`.
-When `BrowserAuthenticator` runs it creates subfolders below folder where it is placed. It means it should have enough rights to create and delete folders and files.
-One of subfolders is going to have security information enough to connect to your cloud without your interaction, so the place **must** be secured!
-
-One of the best options for hosting `BrowserAuthenticator` is
-`%userprofile%\AppData\Local\Applications\BrowserAuthenticator`
-(you need to create the folders yourself in `%userprofile%\AppData\Local`)
-or any other folder in `%userprofile%\AppData\Local` of your choice.
-
-2. Download BrowserAuthenticator-*-windows.zip package and extract it's content to the `BrowserAuthenticator` folder.
-
-3. Press Win+R and run `shell:startup`. Put shortcut of the `BrowserAuthenticator` program in startup folder,
-so the `BrowserAuthenticator` will be started everytime you log in to Windows.
-Don't make copy of the `BrowserAuthenticator` in startup folder, the shortcut only!
-Start the `BrowserAuthenticator` manually for the first time.
-
-4. Since it started the `BrowserAuthenticator` stays in system tray until you system reboot or you manually exit it using menu on tray icon.
-Use mouse double click on the `BrowserAuthenticator` tray icon
-<img src="BrowserAuthenticator/files/cloud.ico"/> to open up Settings window of the application.
-
-5. On the Setting Window setup then `port` and the `password` for incoming connections.
-Type in an email and press Test to check the browser is functional.
-For the `password` you can use any text string. To get things easy you can generate password by clicking the blue text under the field.
-
-6. Go to WebDAV emulator application folder. Open the `wdmrc.config` and edit the `<BrowserAuthenticator>` tag (add the tag if it's missing).
-
-Attributes of `<BrowserAuthenticator>`:
-
-* `Url`="http://`localhost`:`<port>`/" - type in the address of the PC running BrowserAuthenticator application,
-  `port` is the `port` you set in Settings window on the previous step.
-  `localhost` could be replaced by any wold wide IP address reachable by WebDAV emulator.
-
-* `Password` is the text string you set in Settings window on the previous step.
-  You should keep the `Password` in secret. Otherwise someone could connect to you `BrowserAuthenticator` application and ***steal*** you browser cookies, you credentials and you cloud data!
-
-* `CacheDir` is the full path to a folder where WebDAW emulator is going to keep information received from `BrowserAuthenticator` application.
-  It contains browser cookies, the information enough to connect to your cloud impersonating you!
-  Keep the folder secured as much as possible!
-  
-On step 1, you have created a folder for `BrowserAuthenticator` application somewhere in `%userprofile%\AppData\Local`
-Make another subfolder in `BrowserAuthenticator` application folder and put it's path into `CacheDir` attribute, so this way you have to keep in secret only one location not two.
-
-In cage you don't want to cache information received from `BrowserAuthenticator` application remove the `CacheDir` attribute or put an empty string as a value. 
-
-### BrowserAuthenticator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/rus.png" height="15" width="30"/>&nbsp;RUS
+### BrowserAuthenticator
 
 -- это специальный браузер, предназначенный к запуску вместе с Windows,
 чья иконка располагается в системной области внизу экрана среди иконок массы других запущенный программ.
@@ -630,23 +438,7 @@ BrowserAuthenticator ожидает запросов на аутентифика
 
 ---
 
-#### Using as Windows service &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/eng.png" height="15" width="50"/>&nbsp;ENG
-
-Using as Windows service (**dotNet48 package only**).
-* Run `cmd` with Administrator rights
-* Then, for example, `wdmrc.exe --install wdmrc -p 801 --maxthreads 15` <br/>
-* `net start wdmrc`
-
-Using as Windows service (**dotNet7Win/dotNet8Win packages only**).
-
-* For install: Run `cmd` with Administrator rights,
-  change parameters and values, then run
-  `wdmrc.exe --install WebDavService --maxthreads 10 --maxconnections 20 --port 801 --cache-listing 600 --read-write-timeout-sec 600`
-
-* For uninstall: Run `cmd` with Administrator rights, type in and run
-  `wdmrc.exe --uninstall WebDavService`
-
-#### Установка сервисом Windows &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="External/rus.png" height="15" width="30"/>&nbsp;RUS
+#### Установка сервисом Windows
 
 Установка сервисом Windows (**для пакета dotNet48**).
 * Запустить `cmd` в режиме `Запуск от имени администратора`
@@ -657,7 +449,7 @@ Using as Windows service (**dotNet7Win/dotNet8Win packages only**).
 
 * Установка: Запустить `cmd` в режиме `Запуск от имени администратора`,
   затем откорректировать параметры и запустить
-  `wdmrc.exe --install WebDavService --maxthreads 10 --maxconnections 20 --port 801 --cache-listing 600 --read-write-timeout-sec 600`
+  `wdmrc.exe --install WebDavService --maxthreads 10 --maxconnections 20 --port 801 --cache-listing 180`
 
 * Удаление: Запустить `cmd` в режиме `Запуск от имени администратора`,
   затем запустить
@@ -804,12 +596,12 @@ Windows 7 client might perform very bad when connecting to any WebDAV server. Th
 #### Linux
 
 (tested under [Elementary OS](https://elementary.io) and [Lubuntu](http://lubuntu.net/))
-* download and unzip [latest](https://github.com/yar229/WebDavMailRuCloud/releases/latest) release  <sub><sup>([obsolete alternative way](https://toster.ru/q/375448) from [Алексей Немиро](https://toster.ru/user/AlekseyNemiro) )</sup></sub>
-* .Net Framework (WebDAVCloudMailRu-*-dotNet45.zip)
+* download and unzip [latest](https://github.com/ZZZConsulting/WebDavMailRuCloud/releases/latest) release  <sub><sup>([obsolete alternative way](https://toster.ru/q/375448) from [Алексей Немиро](https://toster.ru/user/AlekseyNemiro) )</sup></sub>
+* .NET Framework (WebDAVCloudMailRu-*-dotNet48.zip)
   * `sudo apt install apt mono-complete`
   * `mono wdmrc.exe -p <port>`
-* .Net Core (WebDAVCloudMailRu-*-dotNetCore20.zip)
-  * install [.NET Core](https://www.microsoft.com/net/core#linuxredhat)
+* .NET  (`WebDAVCloudMailRu-*-dotNet*.zip` but not a `WebDAVCloudMailRu-*-dotNet*Win.zip` version)
+  * install [.NET](https://dotnet.microsoft.com/en-us/download#linuxredhat)
   * `dotnet wdmrc.dll <params>`
 
 
@@ -843,7 +635,7 @@ In short:
 
 #### Mac OS X
 
-* download and unzip [latest](https://github.com/yar229/WebDavMailRuCloud/releases/latest) release  <sub><sup>([obsolete alternative way](https://toster.ru/q/375448) from [Алексей Немиро](https://toster.ru/user/AlekseyNemiro) )</sup></sub>
+* download and unzip [latest](https://github.com/ZZZConsulting/WebDavMailRuCloud/releases/latest) release  <sub><sup>([obsolete alternative way](https://toster.ru/q/375448) from [Алексей Немиро](https://toster.ru/user/AlekseyNemiro) )</sup></sub>
 * .Net Framework (WebDAVCloudMailRu-*-dotNet45.zip)
   * `brew install mono` (how to install [brew](https://brew.sh/))
   * `mono wdmrc.exe -p <port>`
@@ -873,14 +665,10 @@ Use any client supports webdav.
 * [Erast Korolev](https://github.com/erastmorgan) for [Mail.Ru.net-cloud-client](https://github.com/erastmorgan/Mail.Ru-.net-cloud-client)
 * [Gareth Lennox](https://bitbucket.org/garethl/) for [XTSSharp](https://bitbucket.org/garethl/xtssharp)
 * [C-A-T](https://github.com/C-A-T9LIFE) for testing and essential information
+* [YaR229](https://github.com/yar229) for original [WebDavMailRuCloud](https://github.com/yar229/WebDavMailRuCloud)
 
 
 #### See also<br>
 *  Official client [Disk-O:](https://disk-o.cloud/)
 *  [Total Commander plugin for cloud.mail.ru service](https://github.com/pozitronik/CloudMailRu)<br>
 *  [MARC-FS - FUSE filesystem attempt for Mail.Ru Cloud](https://gitlab.com/Kanedias/MARC-FS)<br>
-
-
-
-
-<a href="https://www.donationalerts.com/r/yar229"><img src="https://hangoverbarandgrill.com/files/2019/12/002-beer.png" height="20"></a> [A beer for YaR229](https://www.donationalerts.com/r/yar229)

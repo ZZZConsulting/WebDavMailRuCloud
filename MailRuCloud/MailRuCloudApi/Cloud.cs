@@ -33,7 +33,7 @@ public partial class Cloud : IDisposable
     public LinkManager LinkManager { get; }
 
     /// <summary>
-    /// Async tasks cancelation token.
+    /// Async tasks cancellation token.
     /// </summary>
     public readonly CancellationTokenSource CancelToken = new();
 
@@ -62,6 +62,7 @@ public partial class Cloud : IDisposable
         Settings = settings;
         WebRequest.DefaultWebProxy.Credentials = CredentialCache.DefaultCredentials;
         Credentials = credentials;
+
         RequestRepo = new RepoFabric(settings, credentials).Create();
 
         if (!Credentials.IsAnonymous)
@@ -150,14 +151,12 @@ public partial class Cloud : IDisposable
             }
         }
 
-        _entryCache = new EntryCache(TimeSpan.FromSeconds(settings.CacheListingSec), RequestRepo.DetectOutsideChanges);
+        _entryCache = new EntryCache(
+            TimeSpan.FromSeconds(settings.CacheListingSec),
+            RequestRepo.DetectOutsideChanges,
+            settings.DetectActivityInterval
+            );
 
-        ////TODO: wow very dummy linking, refact cache realization globally!
-        //_itemCache = new ItemCache<string, IEntry>(TimeSpan.FromSeconds(settings.CacheListingSec));
-        ////{
-        ////    Полагаемся на стандартно заданное время очистки
-        ////    CleanUpPeriod = TimeSpan.FromMinutes(5)
-        ////};
         LinkManager = settings.DisableLinkManager ? null : new LinkManager(this);
     }
 
@@ -248,8 +247,10 @@ public partial class Cloud : IDisposable
     private static partial Regex MailRuPublicRegex();
     private static readonly Regex _mailRegex = MailRuPublicRegex();
 #else
+
     private static readonly Regex _mailRegex =
         new Regex(MailRuPublicRegexMask, RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+
 #endif
 
     /// <summary>
@@ -637,7 +638,8 @@ public partial class Cloud : IDisposable
             _ => throw new Exception($"Unknown entry type, type = {entry.GetType()},path = {entry.FullPath}")
         };
     }
-    #endregion == Publish =======================================================================================================================
+
+    #endregion == Publish ==========================================================================================================================
 
     #region == Copy =============================================================================================================================
 
@@ -736,8 +738,10 @@ public partial class Cloud : IDisposable
     /// <returns>True or false operation result.</returns>
     public async Task<bool> Copy(IEntry source, string destinationPath, string newName = null)
     {
-        if (source is null) throw new ArgumentNullException(nameof(source));
-        if (string.IsNullOrEmpty(destinationPath)) throw new ArgumentNullException(nameof(destinationPath));
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
+        if (string.IsNullOrEmpty(destinationPath))
+            throw new ArgumentNullException(nameof(destinationPath));
 
         return source switch
         {
@@ -767,7 +771,6 @@ public partial class Cloud : IDisposable
             // копируем не саму ссылку, а её содержимое
             if (link is not null)
             {
-
                 var cloneRes = await CloneItem(destPath, link.Href.OriginalString);
                 if (!cloneRes.IsSuccess)
                     return false;
@@ -819,7 +822,7 @@ public partial class Cloud : IDisposable
         return res;
     }
 
-    #endregion == Copy ==========================================================================================================================
+    #endregion == Copy =============================================================================================================================
 
     #region == Rename ===========================================================================================================================
 
@@ -926,7 +929,7 @@ public partial class Cloud : IDisposable
         return false;
     }
 
-    #endregion == Rename ========================================================================================================================
+    #endregion == Rename ===========================================================================================================================
 
     #region == Move =============================================================================================================================
 
@@ -1024,7 +1027,7 @@ public partial class Cloud : IDisposable
                     if (!renRes) return false;
                 }
             }
-            if (links.Any())
+            if (links.Count > 0)
                 LinkManager.Save();
         }
 
@@ -1084,7 +1087,7 @@ public partial class Cloud : IDisposable
         return res;
     }
 
-    #endregion == Move ==========================================================================================================================
+    #endregion == Move =============================================================================================================================
 
     #region == Remove ===========================================================================================================================
 
@@ -1144,6 +1147,7 @@ public partial class Cloud : IDisposable
                 case Folder folder:
                     await Unpublish(folder.GetPublicLinks(this).FirstOrDefault().Uri, folder.FullPath);
                     break;
+
                 case File ifile:
                     await Unpublish(ifile);
                     break;
@@ -1165,7 +1169,6 @@ public partial class Cloud : IDisposable
                     }
                 }
             }
-
         }
 
         return res;
@@ -1217,7 +1220,7 @@ public partial class Cloud : IDisposable
         return true;
     }
 
-    #endregion == Remove ========================================================================================================================
+    #endregion == Remove ===========================================================================================================================
 
     public IEnumerable<PublicLinkInfo> GetSharedLinks(string fullPath)
     {
@@ -1233,6 +1236,7 @@ public partial class Cloud : IDisposable
         var data = await RequestRepo.AccountInfo();
         return data.DiskUsage;
     }
+
     public DiskUsage GetDiskUsage()
     {
         return GetDiskUsageAsync().Result;
@@ -1254,12 +1258,12 @@ public partial class Cloud : IDisposable
          * В названии папок нельзя использовать символы «" * / : < > ? \ |».
          * Также название не может состоять только из точки «.» или из двух точек «..»
          */
-        name = ReplaceBadSymbols(name);
+        name = Cloud.ReplaceBadSymbols(name);
 
         return CreateFolderAsync(name, basePath).Result;
     }
 
-     /// <summary>
+    /// <summary>
     /// Create folder on the server.
     /// </summary>
     /// <param name="name">New path name.</param>
@@ -1270,7 +1274,7 @@ public partial class Cloud : IDisposable
         return await CreateFolderAsync(WebDavPath.Combine(basePath, name));
     }
 
-   public async Task<bool> CreateFolderAsync(string fullPath)
+    public async Task<bool> CreateFolderAsync(string fullPath)
     {
         try
         {
@@ -1334,7 +1338,8 @@ public partial class Cloud : IDisposable
     }
 
 
-    public async Task<Stream> GetFileUploadStream(string fullFilePath, long size, Action fileStreamSent, Action serverFileProcessed, bool discardEncryption = false)
+    public async Task<Stream> GetFileUploadStream(string fullFilePath, long size,
+        Action fileStreamSent, Action serverFileProcessed, bool discardEncryption = false)
     {
         var file = new File(fullFilePath, size);
 
@@ -1437,6 +1442,7 @@ public partial class Cloud : IDisposable
     }
 
     #region IDisposable Support
+
     private bool _disposedValue;
 
     protected virtual void Dispose(bool disposing)
@@ -1450,9 +1456,13 @@ public partial class Cloud : IDisposable
         _disposedValue = true;
     }
 
-    public void Dispose() => Dispose(true);
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
-    #endregion
+    #endregion IDisposable Support
 
     public async Task<bool> LinkItem(Uri url, string path, string name, bool isFile, long size, DateTime? creationDate)
     {
@@ -1487,7 +1497,7 @@ public partial class Cloud : IDisposable
          * Также название не может состоять только из точки «.» или из двух точек «..»
          */
         string name = WebDavPath.Name(fullFilePath);
-        string newName = ReplaceBadSymbols(name);
+        string newName = Cloud.ReplaceBadSymbols(name);
         if (newName != name)
             fullFilePath = WebDavPath.Combine(WebDavPath.Parent(fullFilePath), newName);
 
@@ -1576,7 +1586,7 @@ public partial class Cloud : IDisposable
         RequestRepo.CleanTrash();
     }
 
-    public string ReplaceBadSymbols(string name)
+    public static string ReplaceBadSymbols(string name)
     {
         /*
          * В названии папок нельзя использовать символы «" * / : < > ? \ |».

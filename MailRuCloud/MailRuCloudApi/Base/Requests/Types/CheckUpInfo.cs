@@ -102,7 +102,7 @@ public class JournalCounters
     {
     }
 
-    public JournalCounters(YadJournalCountersV2 data)
+    public JournalCounters(YadResponseV2JournalCounters data)
     {
         long val;
         var dict = data.EventTypes;

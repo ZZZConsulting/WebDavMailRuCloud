@@ -3,13 +3,13 @@ using Newtonsoft.Json;
 
 namespace YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models;
 
-internal class JournalCountersV2 : YadModelV2
+internal class YadModelV2JournalCountersV2 : YadModelV2
 {
-    public JournalCountersV2()
+    public YadModelV2JournalCountersV2()
     {
         APIMethod = "intapi/journal-counters";
-        ResultType = typeof(YadJournalCountersV2);
-        RequestParameter = new YadRequestV2JournalCounters()
+        ResultType = typeof(YadResponseV2JournalCounters);
+        RequestParameter = () => new YadRequestV2JournalCounters()
         {
             Hash = null,
             Offset = 0,
@@ -20,8 +20,8 @@ internal class JournalCountersV2 : YadModelV2
         };
     }
 
-    public YadJournalCountersV2 Result
-        => (YadJournalCountersV2)ResultObject;
+    public YadResponseV2JournalCounters Result
+        => (YadResponseV2JournalCounters)ResultObject;
 }
 
 public class YadRequestV2JournalCounters : YadRequestV2Parameter
@@ -39,6 +39,7 @@ public class YadRequestV2JournalCounters : YadRequestV2Parameter
         "tz_offset": -10800000
     }
      */
+
     [JsonProperty("vd_hash")]
     public string Hash { get; set; }
 
@@ -54,7 +55,7 @@ public class YadRequestV2JournalCounters : YadRequestV2Parameter
     [JsonProperty("limit")]
     public int Limit { get; set; }
 
-    [JsonProperty("string")]
+    [JsonProperty("text")]
     public string Text { get; set; }
 
     [JsonProperty("event_type")]
@@ -67,7 +68,7 @@ public class YadRequestV2JournalCounters : YadRequestV2Parameter
     //public long TzOffset { get; set; }
 }
 
-public class YadJournalCountersV2
+public class YadResponseV2JournalCounters
 {
     /*
     {
@@ -108,6 +109,7 @@ public class YadJournalCountersV2
         }
     }
     */
+
     [JsonProperty("eventTypes")]
     public Dictionary<string, long> EventTypes { get; set; }
 

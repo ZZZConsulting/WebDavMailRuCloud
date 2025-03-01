@@ -34,7 +34,7 @@ public class LinkManager
     {
         _locker = new SemaphoreSlim(1);
         _cloud = cloud;
-        _linkCache = new EntryCache(TimeSpan.FromSeconds(60), null);
+        _linkCache = new EntryCache(TimeSpan.FromSeconds(60), null, 0);
         //{
         //    Полагаемся на стандартно заданное время очистки
         //    CleanUpPeriod = TimeSpan.FromMinutes(5)
@@ -282,7 +282,6 @@ public class LinkManager
             wp = _itemList.Items.FirstOrDefault(ip => parent == ip.MapTo && name == ip.Name);
             if (wp is null)
                 right = WebDavPath.Combine(name, right);
-
         } while (parent != WebDavPath.Root && wp is null);
 
         if (wp is null)

@@ -12,6 +12,17 @@ namespace YaR.Clouds.Console
 {
     internal static class Config
     {
+        #region Эти константы на случай отсутствия заданных значений в конфигурационном файле
+
+        // Это MS Edge, Версия 133.0.3065.92
+        internal const string DefaultUserAgentInternal =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 Edg/133.0.0.0";
+
+        // Это MS Edge, Версия 133.0.3065.92
+        internal const string DefaultSecChUaInternal = "Not(A:Brand\";v=\"99\", \"Microsoft Edge\";v=\"133\", \"Chromium\";v=\"133";
+
+        #endregion Эти константы на случай отсутствия заданных значений в конфигурационном файле
+
         static Config()
         {
             Document = new XmlDocument();
@@ -58,7 +69,6 @@ namespace YaR.Clouds.Console
                 {
                     return null;
                 }
-
             }
         }
 
@@ -75,7 +85,6 @@ namespace YaR.Clouds.Console
                 {
                     return null;
                 }
-
             }
         }
 
@@ -111,7 +120,6 @@ namespace YaR.Clouds.Console
                 {
                     string url = null;
                     string password = null;
-                    string dir = null;
                     var node = Document.SelectSingleNode("/config/BrowserAuthenticator");
                     foreach (XmlAttribute attr in node.Attributes)
                     {
@@ -119,23 +127,18 @@ namespace YaR.Clouds.Console
                             url = attr.Value;
                         if (attr.LocalName.Equals("password", StringComparison.OrdinalIgnoreCase))
                             password = attr.Value;
-                        if (attr.LocalName.Equals("CacheDir", StringComparison.OrdinalIgnoreCase))
-                            dir = attr.Value;
                     }
-                    if (url != null || dir != null)
+                    if (url != null)
                     {
-                        YaR.Clouds.WebDavStore.BrowserAuthenticator.Instance = new BrowserAuthenticatorInfo(
-                            url,
-                            password,
-                            dir
-                            );
+                        WebDavStore.BrowserAuthenticator.Instance =
+                            new BrowserAuthenticatorInfo(url, password);
                     }
                 }
                 catch (Exception)
                 {
                     // ignored
                 }
-                return YaR.Clouds.WebDavStore.BrowserAuthenticator.Instance;
+                return WebDavStore.BrowserAuthenticator.Instance;
             }
         }
 
@@ -155,7 +158,6 @@ namespace YaR.Clouds.Console
                 {
                     return null;
                 }
-
             }
         }
 
@@ -185,7 +187,7 @@ namespace YaR.Clouds.Console
 
                 try
                 {
-                    _webDAVProps = new Dictionary<string, bool>();
+                    _webDAVProps = [];
 
                     var node = Document.SelectSingleNode("/config/WebDAVProps");
                     foreach (XmlNode childNode in node.ChildNodes)
@@ -203,45 +205,49 @@ namespace YaR.Clouds.Console
                 return _webDAVProps;
             }
         }
+
         private static Dictionary<string, bool> _webDAVProps;
 
         public static DeduplicateRulesBag DeduplicateRules
         {
             get
             {
-                if (null != _deduplicateRulesBag)
+                if (_deduplicateRulesBag is not null)
                     return _deduplicateRulesBag;
 
                 try
                 {
                     _deduplicateRulesBag = new DeduplicateRulesBag
                     {
-                        Rules = new List<DeduplicateRule>(),
+                        Rules = [],
                         DiskPath = Document
-                            .SelectSingleNode("/config/Deduplicate/Disk")
-                            .Attributes["Path"]
-                            .InnerText
+                            ?.SelectSingleNode("/config/Deduplicate/Disk")
+                            ?.Attributes["Path"]
+                            ?.InnerText
                     };
 
-                    if (!Directory.Exists(_deduplicateRulesBag.DiskPath))
-                        Directory.CreateDirectory(_deduplicateRulesBag.DiskPath);
-
-                    var nodes = Document.SelectNodes("/config/Deduplicate/Rules/Rule");
-                    foreach (XmlNode node in nodes)
+                    if (!string.IsNullOrWhiteSpace(_deduplicateRulesBag.DiskPath))
                     {
-                        var rule = new DeduplicateRule
-                        {
-                            CacheType = (CacheType)Enum.Parse(typeof(CacheType), node.Attributes["Cache"].InnerText),
-                            Target = node.Attributes["Target"].InnerText,
-                            MinSize = ulong.Parse(node.Attributes["MinSize"].InnerText),
-                            MaxSize = ulong.Parse(node.Attributes["MaxSize"].InnerText)
-                        };
-                        if (!string.IsNullOrEmpty(rule.Target) && !VerifyRegex(rule.Target))
-                            throw new Exception("Invalid regex expression in config/Deduplicate/Rule/Target");
-                        if (rule.MaxSize > 0 && rule.MaxSize < rule.MinSize)
-                            throw new Exception("Invalid MinSize/MaxSize config/Deduplicate/Rule/");
+                        if (!Directory.Exists(_deduplicateRulesBag.DiskPath))
+                            Directory.CreateDirectory(_deduplicateRulesBag.DiskPath);
 
-                        _deduplicateRulesBag.Rules.Add(rule);
+                        var nodes = Document.SelectNodes("/config/Deduplicate/Rules/Rule");
+                        foreach (XmlNode node in nodes)
+                        {
+                            var rule = new DeduplicateRule
+                            {
+                                CacheType = (CacheType)Enum.Parse(typeof(CacheType), node.Attributes["Cache"].InnerText),
+                                Target = node.Attributes["Target"].InnerText,
+                                MinSize = ulong.Parse(node.Attributes["MinSize"].InnerText),
+                                MaxSize = ulong.Parse(node.Attributes["MaxSize"].InnerText)
+                            };
+                            if (!string.IsNullOrEmpty(rule.Target) && !VerifyRegex(rule.Target))
+                                throw new Exception("Invalid regex expression in config/Deduplicate/Rule/Target");
+                            if (rule.MaxSize > 0 && rule.MaxSize < rule.MinSize)
+                                throw new Exception("Invalid MinSize/MaxSize config/Deduplicate/Rule/");
+
+                            _deduplicateRulesBag.Rules.Add(rule);
+                        }
                     }
                 }
                 catch (Exception)
@@ -252,6 +258,7 @@ namespace YaR.Clouds.Console
                 return _deduplicateRulesBag;
             }
         }
+
         private static DeduplicateRulesBag _deduplicateRulesBag;
 
 

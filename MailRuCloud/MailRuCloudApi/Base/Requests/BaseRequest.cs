@@ -157,7 +157,8 @@ internal abstract class BaseRequest<TConvert, T> where T : class
                      * throw new HttpIOException(HttpRequestError.ResponseEnded, SR.net_http_invalid_response_premature_eof);
                      * Мы его отлавливаем и повторяем обращение к серверу.
                      */
-                    using var response = (HttpWebResponse)await httpRequest.GetResponseAsync().ConfigureAwait(false);
+                    //using var response = (HttpWebResponse)await httpRequest.GetResponseAsync().ConfigureAwait(false);
+                    using var response = (HttpWebResponse)httpRequest.GetResponse();
 
                     if ((int)response.StatusCode >= 500)
                     {

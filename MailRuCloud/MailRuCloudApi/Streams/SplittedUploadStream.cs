@@ -8,7 +8,7 @@ using File = YaR.Clouds.Base.File;
 
 namespace YaR.Clouds.Streams;
 
-class SplittedUploadStream : Stream
+internal class SplittedUploadStream : Stream
 {
     private readonly string _destinationPath;
     private readonly Cloud _cloud;
@@ -23,10 +23,11 @@ class SplittedUploadStream : Stream
     private UploadStream _uploadStream;
 
 
-    private readonly List<File> _files = new();
+    private readonly List<File> _files = [];
     private bool _performAsSplitted;
 
-    public SplittedUploadStream(string destinationPath, Cloud cloud, long size, Action fileStreamSent, Action serverFileProcessed, bool checkHash = true, CryptInfo cryptInfo = null)
+    public SplittedUploadStream(string destinationPath, Cloud cloud, long size,
+        Action fileStreamSent, Action serverFileProcessed, bool checkHash = true, CryptInfo cryptInfo = null)
     {
         _destinationPath = destinationPath;
         _cloud = cloud;
@@ -49,7 +50,7 @@ class SplittedUploadStream : Stream
         _performAsSplitted = _size > _maxFileSize || _cryptInfo != null;
         _origfile = new File(_destinationPath, _size);
 
-        if (!_performAsSplitted) // crypted are performed alike splitted file
+        if (!_performAsSplitted) // encrypted are performed alike splitted file
         {
             _files.Add(_origfile);
         }
@@ -111,9 +112,11 @@ class SplittedUploadStream : Stream
     private Task _uploadPendingTask = Task.CompletedTask;
 
     public readonly Action FileStreamSent;
+
     private void OnFileStreamSent() => FileStreamSent?.Invoke();
 
     public readonly Action ServerFileProcessed;
+
     private void OnServerFileProcessed() => ServerFileProcessed?.Invoke();
 
     public override void Flush()
@@ -183,7 +186,11 @@ class SplittedUploadStream : Stream
         var clostream = _uploadStream;
         _uploadPendingTask.ContinueWith(_ =>
         {
-            clostream?.Dispose();
+            try
+            {
+                clostream?.Dispose();
+            }
+            catch { }
         }).Wait();
 
         if (_performAsSplitted)

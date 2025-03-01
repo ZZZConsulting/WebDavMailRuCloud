@@ -32,7 +32,7 @@ namespace NWebDav.Server.Helpers
         /// <param name="statusDescription">
         /// The human-readable WebDAV status description. If no status
         /// description is set (or <see langword="null"/>), then the
-        /// default status description is written. 
+        /// default status description is written.
         /// </param>
         /// <remarks>
         /// Not all HTTP infrastructures allow to set the status description,
@@ -80,7 +80,7 @@ namespace NWebDav.Server.Helpers
             //response.SetHeaderValue("Content-Length", response.Stream.Length.ToString(CultureInfo.InvariantCulture)); // Position.ToString(CultureInfo.InvariantCulture));
 
             // Obtain the result as an XML document
-            using (var xmlWriter = XmlWriter.Create(response.Stream, new XmlWriterSettings
+            using var xmlWriter = XmlWriter.Create(response.Stream, new XmlWriterSettings
             {
                 OmitXmlDeclaration = false,
                 CheckCharacters = false,
@@ -92,22 +92,20 @@ namespace NWebDav.Server.Helpers
                 Indent = false,
 #endif
 
-#if USE_XML_ASYNC_READWRITE
+#if !NET48
                 Async = true
 #endif
-            }))
-            {
-                // Add the namespaces (Win7 WebDAV client requires them like this)
-                xDocument.Root.SetAttributeValue(XNamespace.Xmlns + WebDavNamespaces.DavNsPrefix, WebDavNamespaces.DavNs);
-                xDocument.Root.SetAttributeValue(XNamespace.Xmlns + WebDavNamespaces.Win32NsPrefix, WebDavNamespaces.Win32Ns);
+            });
+            // Add the namespaces (Win7 WebDAV client requires them like this)
+            xDocument.Root.SetAttributeValue(XNamespace.Xmlns + WebDavNamespaces.DavNsPrefix, WebDavNamespaces.DavNs);
+            xDocument.Root.SetAttributeValue(XNamespace.Xmlns + WebDavNamespaces.Win32NsPrefix, WebDavNamespaces.Win32Ns);
 
 
-#if USE_XML_ASYNC_READWRITE
-                await xDocument.WriteToAsync(xmlWriter, cancellationToken: default);
+#if NET48
+            await Task.Run(() => xDocument.WriteTo(xmlWriter));
 #else
-                await Task.Run(() => xDocument.WriteTo(xmlWriter));
+            await xDocument.WriteToAsync(xmlWriter, cancellationToken: default);
 #endif
-            }
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using YaR.Clouds.Base.Repos.MailRuCloud;
 using YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests;
 using YaR.Clouds.Base.Repos.MailRuCloud.Mobile.Requests.Types;
+using YaR.Clouds.Base.Repos.YandexDisk.YadWeb.Models;
 using YaR.Clouds.Base.Requests.Types;
 using YaR.Clouds.Extensions;
 
@@ -86,6 +87,16 @@ internal static class DtoImportExtensions
 
 
 
+
+    internal static CopyResult ToCopyResult(this YadModelV2Copy data, string newName)
+    {
+        var res = new CopyResult
+        {
+            IsSuccess = data.Errors.Count == 0,
+            NewName = newName
+        };
+        return res;
+    }
 
     internal static CopyResult ToCopyResult(this MoveRequest.Result data, string newName)
     {

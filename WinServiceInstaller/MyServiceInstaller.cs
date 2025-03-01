@@ -1,4 +1,5 @@
-﻿#if NET48 || NET7_0_WINDOWS || NET8_0_WINDOWS
+﻿#if WINDOWS || NET48
+
 using System.ComponentModel;
 using System.Configuration.Install;
 using System.ServiceProcess;
@@ -27,8 +28,15 @@ namespace WinServiceInstaller
             Installers.Add(processInstaller);
         }
 
+        // Attribute DesignerSerializationVisibility hides the error
+        // 'Property XXX does not configure the code serialization for its property content
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public static string ServiceName { get; set; }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public static string DisplayName { get; set; }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public static string Description { get; set; }
     }
 }

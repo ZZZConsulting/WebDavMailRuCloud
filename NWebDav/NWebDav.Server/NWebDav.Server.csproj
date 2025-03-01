@@ -3,97 +3,69 @@
 	<Import Project="..\..\Common.targets" />
 
 	<PropertyGroup>
+	    <LangVersion>$(CommonLangVersion)</LangVersion>
 		<TargetFrameworks>$(CommonTargetFrameworks)</TargetFrameworks>
 		<CheckEolTargetFramework>false</CheckEolTargetFramework>
-	</PropertyGroup>
-
-	<PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
-		<DefineConstants>$(DefineConstants);USE_XML_ASYNC_READWRITE</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-		<DefineConstants>$(DefineConstants);USE_XML_ASYNC_READWRITE</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-		<DefineConstants>$(DefineConstants);USE_XML_ASYNC_READWRITE</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<LangVersion>$(CommonLangVersion)</LangVersion>
 		<RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.0|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-windows|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+		<WarningsAsErrors>$(WarningsAsErrors);NU1605;</WarningsAsErrors>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net48|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp3.1|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net5.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows|AnyCPU'">
+	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-windows|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
+	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-windows|AnyCPU'">
+	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net48|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.1|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net5.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net6.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0|AnyCPU'">
-	  <WarningsAsErrors>$(WarningsAsErrors);NU1605;CAA1510;</WarningsAsErrors>
+	  <NoWarn>1701;1702;CA1510</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows|AnyCPU'">
+	  <NoWarn>1701;1702;CA1510</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0|AnyCPU'">
+	  <NoWarn>1701;1702;CA1510</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-windows|AnyCPU'">
+	  <NoWarn>1701;1702;CA1510</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0-preview.18571.3" />
+		<PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
+		<PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
+		<PackageReference Include="runtime.native.System" Version="4.3.1" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.2" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
 	</ItemGroup>
 </Project>

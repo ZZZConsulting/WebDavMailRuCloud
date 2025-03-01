@@ -23,6 +23,7 @@ public class CloudSettings
         get => CacheListingSec > 0 ? _listDepth : 1;
         set => _listDepth = value;
     }
+
     private int _listDepth = 1;
 
     public string SpecialCommandPrefix { get; set; } = ">>";
@@ -38,6 +39,8 @@ public class CloudSettings
 
     public bool DisableLinkManager { get; set; }
 
+    public int DetectActivityInterval { get; set; }
+
     public int CloudInstanceTimeoutMinutes { get; set; }
 
     #region Connection timeouts
@@ -46,14 +49,12 @@ public class CloudSettings
     public int WaitResponseTimeoutSec { get; set; }
     public int ReadWriteTimeoutSec { get; set; }
 
-    #endregion
+    #endregion Connection timeouts
     #region BrowserAuthenticator
 
     public string BrowserAuthenticatorUrl { get; set; }
 
     public string BrowserAuthenticatorPassword { get; set; }
 
-    public string BrowserAuthenticatorCacheDir { get; set; }
-
-    #endregion
+    #endregion BrowserAuthenticator
 }
