@@ -192,9 +192,13 @@ namespace YaR.Clouds.Console
                     var node = Document.SelectSingleNode("/config/WebDAVProps");
                     foreach (XmlNode childNode in node.ChildNodes)
                     {
-                        string pname = childNode.Attributes["name"].InnerText;
-                        bool enabled = bool.Parse(childNode.Attributes["enabled"].InnerText);
-                        _webDAVProps[pname] = enabled;
+                        string pname = childNode?.Attributes?["name"]?.InnerText;
+                        if (pname is null)
+                            continue;
+                        string key = childNode.Attributes["enabled"]?.InnerText;
+                        if (key is null)
+                            continue;
+                        _webDAVProps[pname] = bool.Parse(key);
                     }
                 }
                 catch (Exception)
