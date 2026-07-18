@@ -61,7 +61,11 @@ internal static class DtoImportYadWeb
         if (path.StartsWith("/disk"))
             path = path.Remove(0, "/disk".Length);
 
-        var folder = new Folder(/* dirSize ?? */entryData?.Meta?.Size ?? 0, path) { IsChildrenLoaded = false };
+        var folder = new Folder(/* dirSize ?? */entryData?.Meta?.Size ?? 0, path)
+        {
+            IsChildrenLoaded = false,
+            IsShared = entryData?.Meta?.Group?.IsShared ?? false,
+        };
         if (!string.IsNullOrEmpty(entryData?.Meta?.UrlShort))
         {
             PublicLinkInfo item = new PublicLinkInfo("short", entryData.Meta.UrlShort);
@@ -113,7 +117,8 @@ internal static class DtoImportYadWeb
         {
             CreationTimeUtc = UnixTimeStampToDateTime(data.Ctime, DateTime.MinValue),
             LastAccessTimeUtc = UnixTimeStampToDateTime(data.Utime, DateTime.MinValue),
-            LastWriteTimeUtc = UnixTimeStampToDateTime(data.Mtime, DateTime.MinValue)
+            LastWriteTimeUtc = UnixTimeStampToDateTime(data.Mtime, DateTime.MinValue),
+            IsShared = data.Meta?.Group?.IsShared ?? false,
         };
         if (!string.IsNullOrEmpty(data.Meta.UrlShort))
         {
@@ -131,10 +136,11 @@ internal static class DtoImportYadWeb
         {
             CreationTimeUtc = UnixTimeStampToDateTime(data.Ctime, DateTime.MinValue),
             LastAccessTimeUtc = UnixTimeStampToDateTime(data.Utime, DateTime.MinValue),
-            LastWriteTimeUtc = UnixTimeStampToDateTime(data.Mtime, DateTime.MinValue)
+            LastWriteTimeUtc = UnixTimeStampToDateTime(data.Mtime, DateTime.MinValue),
             //PublicLink = data.Meta.UrlShort.StartsWith(publicBaseUrl)
             //    ? data.Meta.UrlShort.Remove(0, publicBaseUrl.Length)
             //    : data.Meta.UrlShort
+            IsShared = data.Meta?.Group?.IsShared ?? false,
         };
         if (!string.IsNullOrEmpty(data.Meta.UrlShort))
         {

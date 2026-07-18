@@ -13,4 +13,5 @@ public interface IEntry
     DateTime CreationTimeUtc { get; }
     ConcurrentDictionary<string, PublicLinkInfo> PublicLinks { get; }
     ImmutableList<IEntry> Descendants { get; }
+    bool IsShared { get; }
 }

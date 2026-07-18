@@ -47,7 +47,11 @@ public class EntryCache : IDisposable
     // По умолчанию очистка кеша от устаревших записей производится каждые 30 секунд
     private readonly TimeSpan _cleanUpPeriod = TimeSpan.FromSeconds(30);
 
-    private readonly TimeSpan _expirePeriod;
+    /// <summary>Время жизни записи обычного файла или папки в кеше.</summary>
+    public TimeSpan ExpirePeriod { get; private set; }
+
+    /// <summary>Время жизни shared файла или папки записи в кеше.</summary>
+    public TimeSpan ExpirePeriodShared { get; private set; }
 
     public bool IsCacheEnabled { get; private set; }
 
@@ -81,9 +85,9 @@ public class EntryCache : IDisposable
     internal class CacheItem
     {
         /// <summary>
-        /// Отметка о времени размещения в кеше.
+        /// Отметка о времени прекращения актуальности в кеше.
         /// </summary>
-        public DateTime CreationTime { get; set; }
+        public DateTime ExpirationTime { get; set; }
 
         /// <summary>
         /// Entry - файл, папка или link в кеше, если не null.
@@ -109,7 +113,7 @@ public class EntryCache : IDisposable
                         : AllDescendantsInCache
                             ? "<<FOLDER with DESCENDANTS>>"
                             : "<<JUST folder entry>>")}"
-            + $", Since {CreationTime:HH:mm:ss} {Entry?.FullPath}";
+            + $", Since {ExpirationTime:HH:mm:ss} {Entry?.FullPath}";
     }
 
     /// <summary>
@@ -132,10 +136,12 @@ public class EntryCache : IDisposable
         public int Value;
     }
 
-    public EntryCache(TimeSpan expirePeriod, CheckOperations activeOperationsAsync, int detectActivityInterval)
+    public EntryCache(TimeSpan expirePeriodRegular, TimeSpan expirePeriodShared,
+        CheckOperations activeOperationsAsync, int detectActivityInterval)
     {
-        _expirePeriod = expirePeriod;
-        IsCacheEnabled = Math.Abs(_expirePeriod.TotalMilliseconds) > 0.01;
+        ExpirePeriod = expirePeriodRegular;
+        ExpirePeriodShared = expirePeriodShared;
+        IsCacheEnabled = Math.Abs(ExpirePeriod.TotalMilliseconds) > 1;
 
         _lastComparedInfo = null;
         _activeOperationsAsync = activeOperationsAsync;
@@ -152,7 +158,7 @@ public class EntryCache : IDisposable
             };
             _cleanTimer.Elapsed += RemoveExpired;
 
-            if (_activeOperationsAsync is not null && expirePeriod.TotalSeconds >= 30 && detectActivityInterval > 0)
+            if (_activeOperationsAsync is not null && ExpirePeriod.TotalSeconds >= 30 && detectActivityInterval > 0)
             {
                 if (detectActivityInterval < 4)
                     detectActivityInterval = 4;
@@ -243,14 +249,14 @@ public class EntryCache : IDisposable
 
         var watch = Stopwatch.StartNew();
 
-        DateTime threshold = DateTime.Now - _expirePeriod;
+        DateTime threshold = DateTime.Now;
         int removedCount = 0;
         int partiallyExpiredCount = 0;
         foreach (var entry in _root)
         {
             _rootLocker.LockedAction(() =>
             {
-                if (entry.Value.CreationTime <= threshold &&
+                if (entry.Value.ExpirationTime <= threshold &&
                     _root.TryRemove(entry.Key, out var cacheEntry))
                 {
                     /*
@@ -610,8 +616,8 @@ public class EntryCache : IDisposable
                 return (default, GetState.NotExists);
             }
 
-            DateTime threshold = DateTime.Now - _expirePeriod;
-            if (cachedEntry.CreationTime <= threshold)
+            DateTime threshold = DateTime.Now;
+            if (cachedEntry.ExpirationTime <= threshold)
             {
                 Logger.Debug($"Cache expired: {fullPath}");
                 return (default, GetState.Unknown);
@@ -640,7 +646,7 @@ public class EntryCache : IDisposable
                         // Если при формировании списка содержимого папки из кеша
                         // выясняется, что часть содержимого в кеше устарело,
                         // то список из кеша сформировать не можем.
-                        if (cacheItem.Value.CreationTime <= threshold)
+                        if (cacheItem.Value.ExpirationTime <= threshold)
                             return (default, GetState.Unknown);
 
                         if (cacheItem.Value.Entry is not null)
@@ -679,20 +685,20 @@ public class EntryCache : IDisposable
         if (entry is Link link)
             Add(link, DateTime.Now);
         else
-        if (entry is File file)
-            AddInternal(file, DateTime.Now);
-        else
-        if (entry is Folder folder)
-        {
-            if (folder.IsChildrenLoaded)
-            {
-                _rootLocker.LockedAction(() => AddWithChildren(folder, DateTime.Now));
-            }
+            if (entry is File file)
+                AddInternal(file, DateTime.Now);
             else
-            {
-                AddOne(folder, DateTime.Now);
-            }
-        }
+                if (entry is Folder folder)
+                {
+                    if (folder.IsChildrenLoaded)
+                    {
+                        _rootLocker.LockedAction(() => AddWithChildren(folder, DateTime.Now));
+                    }
+                    else
+                    {
+                        AddOne(folder, DateTime.Now);
+                    }
+                }
     }
 
     private void AddInternal(File file, DateTime creationTime)
@@ -709,7 +715,7 @@ public class EntryCache : IDisposable
             {
                 Entry = file.New(fullPath),
                 AllDescendantsInCache = true,
-                CreationTime = creationTime
+                ExpirationTime = creationTime + (file.IsShared ? ExpirePeriodShared : ExpirePeriod),
             };
             _root.AddOrUpdate(fullPath, cachedItem, (_, _) => cachedItem);
         }
@@ -722,7 +728,7 @@ public class EntryCache : IDisposable
         {
             Entry = link,
             AllDescendantsInCache = true,
-            CreationTime = creationTime
+            ExpirationTime = creationTime + (link.IsShared ? ExpirePeriodShared : ExpirePeriod),
         };
         _root.AddOrUpdate(fullPath, cachedItem, (_, _) => cachedItem);
     }
@@ -749,7 +755,7 @@ public class EntryCache : IDisposable
                 // этот список только носитель данных при выгрузке с сервера.
                 Entry = folder.New(fullPath),
                 AllDescendantsInCache = false,
-                CreationTime = creationTime
+                ExpirationTime = creationTime + (folder.IsShared ? ExpirePeriodShared : ExpirePeriod),
             };
             _root.AddOrUpdate(fullPath, cachedItem,
                 (key, value) =>
@@ -763,6 +769,7 @@ public class EntryCache : IDisposable
                      */
                     if (value.AllDescendantsInCache && !cachedItem.AllDescendantsInCache)
                         cachedItem.AllDescendantsInCache = true;
+
                     return cachedItem;
                 });
 
@@ -784,8 +791,8 @@ public class EntryCache : IDisposable
                 if (child is File file)
                     AddInternal(file, creationTime);
                 else
-                if (child is Folder fld)
-                    AddOne(fld, creationTime);
+                    if (child is Folder fld)
+                        AddOne(fld, creationTime);
             }
             CacheItem cachedItem = AddOne(folder, creationTime);
             cachedItem.AllDescendantsInCache = true;
@@ -824,27 +831,27 @@ public class EntryCache : IDisposable
                 // Добавить новый
                 if (createdEntry is File file)
                 {
-                    // Проверка чтобы не добавлять в кэш файлы вида test.csv.wdmrc.001b, создаваемые в зашифрованных папках
+                    // Проверка чтобы не добавлять в кеш файлы вида test.csv.wdmrc.001b, создаваемые в зашифрованных папках
                     if (file.ServiceInfo.CleanName == file.Name)
                         AddInternal(file, DateTime.Now);
                 }
                 else
-                if (createdEntry is Folder folder)
-                {
-                    /* Данный метод вызывается для созданных и переименованных файлов и папок.
-                     * С сервера читали entry самой папки и одного вложенного элемента.
-                     * Если Descendants.Count равен 0, то можно ставить
-                     * IsChildrenLoaded = true, т.к. ничего вложенного нет.
-                     * Но если Descendants.Count>0, тогда IsChildrenLoaded = false,
-                     * т.к. что-то внутри есть, но мы не читали полный список содержимого.
-                     * IsChildrenLoaded ставится в true,
-                     * чтобы последующие чтения entry созданного элемента
-                     * читались из кеша, а не находили только entry от директории
-                     * без потомков, что автоматически приводит к игнорированию кеша.
-                     */
-                    folder.IsChildrenLoaded = folder.Descendants.Count == 0;
-                    AddWithChildren(folder, DateTime.Now);
-                }
+                    if (createdEntry is Folder folder)
+                    {
+                        /* Данный метод вызывается для созданных и переименованных файлов и папок.
+                         * С сервера читали entry самой папки и одного вложенного элемента.
+                         * Если Descendants.Count равен 0, то можно ставить
+                         * IsChildrenLoaded = true, т.к. ничего вложенного нет.
+                         * Но если Descendants.Count>0, тогда IsChildrenLoaded = false,
+                         * т.к. что-то внутри есть, но мы не читали полный список содержимого.
+                         * IsChildrenLoaded ставится в true,
+                         * чтобы последующие чтения entry созданного элемента
+                         * читались из кеша, а не находили только entry от директории
+                         * без потомков, что автоматически приводит к игнорированию кеша.
+                         */
+                        folder.IsChildrenLoaded = folder.Descendants.Count == 0;
+                        AddWithChildren(folder, DateTime.Now);
+                    }
                 // После добавления или обновления элемента надо обновить родителя,
                 // если у него AllDescendantsInCache=true, иначе нет смысла
                 string parent = WebDavPath.Parent(createdItemFullPath);
@@ -988,7 +995,7 @@ public class EntryCache : IDisposable
 
                     if (WebDavPath.IsParent(removedItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
                     {
-                        cacheItem.Value.CreationTime = DateTime.MinValue;
+                        cacheItem.Value.ExpirationTime = DateTime.MinValue;
                     }
                 }
 
@@ -998,7 +1005,7 @@ public class EntryCache : IDisposable
                 {
                     Entry = null,
                     AllDescendantsInCache = true,
-                    CreationTime = DateTime.Now
+                    ExpirationTime = DateTime.Now + (ExpirePeriodShared < ExpirePeriod ? ExpirePeriodShared : ExpirePeriod),
                 };
                 _root.TryAdd(removedItemFullPath, deletedItem);
             });

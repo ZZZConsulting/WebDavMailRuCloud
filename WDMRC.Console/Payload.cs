@@ -50,6 +50,9 @@ namespace YaR.Clouds.Console
                 UserAgent = ConstructUserAgent(options.UserAgent, Config.DefaultUserAgent),
                 SecChUa = ConstructSecChUa(options.SecChUa, Config.DefaultSecChUa),
                 CacheListingSec = options.CacheListingSec,
+                CacheListingSharedSec = options.CacheListingSharedSec < 0
+                                        ? options.CacheListingSec
+                                        : options.CacheListingSharedSec,
                 MaxConnectionCount = options.MaxConnectionCount,
                 ListDepth = options.CacheListingDepth,
                 AdditionalSpecialCommandPrefix = Config.AdditionalSpecialCommandPrefix,
@@ -231,6 +234,7 @@ namespace YaR.Clouds.Console
             Logger.Info($"Track changes on Yandex.Disk made behind the Emulator: " +
                 $"{(options.DetectActivityInterval == 0 ? "disabled" : $"every {options.DetectActivityInterval} sec")}");
             Logger.Info($"Folder cache expiration timeout: {options.CacheListingSec} sec");
+            Logger.Info($"Shared folder cache expiration timeout: {options.CacheListingSharedSec} sec");
             Logger.Info($"List query folder depth: {options.CacheListingDepth}");
             Logger.Info($"Use locks: {options.UseLocks}");
             Logger.Info($"Support links in /item.links.wdmrc: {(!options.DisableLinkManager)}");

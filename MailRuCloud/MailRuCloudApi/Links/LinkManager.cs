@@ -34,7 +34,11 @@ public class LinkManager
     {
         _locker = new SemaphoreSlim(1);
         _cloud = cloud;
-        _linkCache = new EntryCache(TimeSpan.FromSeconds(60), null, 0);
+        _linkCache = new EntryCache(
+            TimeSpan.FromSeconds(cloud.Settings.CacheListingSec),
+            TimeSpan.FromSeconds(cloud.Settings.CacheListingSharedSec),
+            null,
+            0);
         //{
         //    Полагаемся на стандартно заданное время очистки
         //    CleanUpPeriod = TimeSpan.FromMinutes(5)

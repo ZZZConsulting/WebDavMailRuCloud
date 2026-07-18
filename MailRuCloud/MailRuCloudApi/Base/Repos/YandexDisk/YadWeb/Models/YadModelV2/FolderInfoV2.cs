@@ -168,6 +168,15 @@ internal class Meta
 
     [JsonProperty("total_results_count")]
     public int? TotalEntityCount { get; set; }
+
+    [JsonProperty("group", NullValueHandling = NullValueHandling.Ignore)]
+    public GroupInfo Group { get; set; }
+}
+
+internal class GroupInfo
+{
+    [JsonProperty("is_shared", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? IsShared { get; set; }
 }
 
 internal class Stream

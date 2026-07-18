@@ -36,6 +36,9 @@ namespace YaR.Clouds.Console
         [Option("cache-listing", Default = 30, HelpText = "Timeout of in-memory cache of cloud names of files and folders, sec")]
         public int CacheListingSec { get; set; }
 
+        [Option("cache-listing-shared", Default = -1, HelpText = "Timeout of in-memory cache of cloud names of shared files and folders, sec")]
+        public int CacheListingSharedSec { get; set; }
+
         [Option("cache-listing-depth", Default = 1, HelpText = "Depth of folders listings, always equals 1 when cache-listing>0")]
         public int CacheListingDepth { get; set; }
 

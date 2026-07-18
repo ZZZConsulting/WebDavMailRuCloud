@@ -51,6 +51,7 @@ public class File : IEntry
     /// чтобы при повторном обращении на чтение файла не тратить время на получения URL'а.
     /// </summary>
     public string DownloadUrlCache { get; set; } = null;
+
     /// <summary>
     /// Время, с которого кешем <see cref="DownloadUrlCache"/> пользоваться нельзя
     /// и нужно получить новый URL.
@@ -91,6 +92,7 @@ public class File : IEntry
             Extension = System.IO.Path.GetExtension(_name)?.TrimStart('.') ?? string.Empty;
         }
     } //WebDavPath.Name(FullPath)
+
     private string _name;
 
     /// <summary>
@@ -119,6 +121,7 @@ public class File : IEntry
         get => _originalSize;
         set => _originalSize = value;
     }
+
     private FileSize _originalSize;
 
     protected virtual File FileHeader => null;
@@ -167,6 +170,7 @@ public class File : IEntry
     /// List of physical files contains data
     /// </summary>
     public virtual List<File> Parts => new() { this };
+
     public virtual IList<File> Files => new List<File> { this };
 
     private static readonly DateTime MinFileDate = new(1900, 1, 1);
@@ -179,12 +183,14 @@ public class File : IEntry
     public bool IsFile => true;
     public FilenameServiceInfo ServiceInfo { get; protected set; }
 
+    /// <summary>True, если папка на Яндекс Диске имеет сторонний доступ (shared folder).</summary>
+    public bool IsShared { get; set; } = false;
+
     //TODO : refact, bad design
     public void SetName(string destinationName)
     {
         FullPath = WebDavPath.Combine(Path, destinationName);
-        if (ServiceInfo != null)
-            ServiceInfo.CleanName = Name;
+        ServiceInfo?.CleanName = Name;
 
         if (Files.Count <= 1)
             return;

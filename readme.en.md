@@ -51,6 +51,9 @@ In case you need that in English, please let me know. Or just use
   --use-locks           (Default: false) Use locking feature.
   --cache-listing       (Default: 30) Timeout of in-memory cache of file and folder names
                         of the cloud in seconds. 0 disables the cache.
+  --cache-listing-shared
+                        (Default: 30) Timeout of in-memory cache of shared file and shared folder
+                        names of the cloud in seconds. 0 disables the cache of shared items.
   --cache-listing-depth (Default: 1) Folder hierarchy depth when listing folders content.
                         Always equals 1 when cache-listing > 0.
                         To maximize performance

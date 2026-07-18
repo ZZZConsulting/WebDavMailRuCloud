@@ -153,6 +153,7 @@ public partial class Cloud : IDisposable
 
         _entryCache = new EntryCache(
             TimeSpan.FromSeconds(settings.CacheListingSec),
+            TimeSpan.FromSeconds(settings.CacheListingSharedSec),
             RequestRepo.DetectOutsideChanges,
             settings.DetectActivityInterval
             );
@@ -333,6 +334,10 @@ public partial class Cloud : IDisposable
             return null;
         }
 
+        if (cloudResult is not null)
+        {
+            Logger.Debug($"{cloudResult.FullPath} is {(cloudResult.IsShared ? "shared" : "regular")}");
+        }
 
         //if (itemType == ItemType.Unknown)
         //    itemType = cloudResult is Folder
@@ -679,10 +684,15 @@ public partial class Cloud : IDisposable
                 return false;
 
             // OnRemove делать до OnCreate
-            _entryCache.OnRemoveTree(timestampBeforeOperation,
-                folder.FullPath, GetItemAsync(folder.FullPath, fastGetFromCloud: true));
-            _entryCache.OnCreate(timestampBeforeOperation,
-                destinationPath, GetItemAsync(destinationPath, fastGetFromCloud: true), folder.FullPath);
+            _entryCache.OnRemoveTree(
+                timestampBeforeOperation,
+                folder.FullPath,
+                GetItemAsync(folder.FullPath, fastGetFromCloud: true));
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                destinationPath,
+                GetItemAsync(destinationPath, fastGetFromCloud: true),
+                folder.FullPath);
         }
         finally
         {
@@ -906,10 +916,15 @@ public partial class Cloud : IDisposable
                 LinkManager?.ProcessRename(fullPath, newName);
 
                 // OnRemove делать до OnCreate
-                _entryCache.OnRemoveTree(timestampBeforeOperation,
-                    fullPath, GetItemAsync(fullPath, fastGetFromCloud: true));
-                _entryCache.OnCreate(timestampBeforeOperation,
-                    newNamePath, GetItemAsync(newNamePath, fastGetFromCloud: true), fullPath);
+                _entryCache.OnRemoveTree(
+                    timestampBeforeOperation,
+                    fullPath,
+                    GetItemAsync(fullPath, fastGetFromCloud: true));
+                _entryCache.OnCreate(
+                    timestampBeforeOperation,
+                    newNamePath,
+                    GetItemAsync(newNamePath, fastGetFromCloud: true),
+                    fullPath);
 
                 return data.IsSuccess;
             }
@@ -994,10 +1009,15 @@ public partial class Cloud : IDisposable
                 return false;
 
             // OnRemove делать до OnCreate
-            _entryCache.OnRemoveTree(timestampBeforeOperation,
-                folder.FullPath, GetItemAsync(folder.FullPath, fastGetFromCloud: true));
-            _entryCache.OnCreate(timestampBeforeOperation,
-                destinationPath, GetItemAsync(destinationPath, fastGetFromCloud: true), folder.FullPath);
+            _entryCache.OnRemoveTree(
+                timestampBeforeOperation,
+                folder.FullPath,
+                GetItemAsync(folder.FullPath, fastGetFromCloud: true));
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                destinationPath,
+                GetItemAsync(destinationPath, fastGetFromCloud: true),
+                folder.FullPath);
         }
         finally
         {
@@ -1066,10 +1086,15 @@ public partial class Cloud : IDisposable
                         return moveRes;
 
                     // OnRemove делать до OnCreate
-                    _entryCache.OnRemoveTree(timestampBeforeOperation,
-                        file.FullPath, GetItemAsync(file.FullPath, fastGetFromCloud: true));
-                    _entryCache.OnCreate(timestampBeforeOperation,
-                        destinationPath, GetItemAsync(destinationPath, fastGetFromCloud: true), file.FullPath);
+                    _entryCache.OnRemoveTree(
+                        timestampBeforeOperation,
+                        file.FullPath,
+                        GetItemAsync(file.FullPath, fastGetFromCloud: true));
+                    _entryCache.OnCreate(
+                        timestampBeforeOperation,
+                        destinationPath,
+                        GetItemAsync(destinationPath, fastGetFromCloud: true),
+                        file.FullPath);
 
                     return moveRes;
                 }

@@ -52,8 +52,10 @@ public class Link : IEntry
 
     public bool IsResolved { get; set; }
 
+    public bool IsShared { get; set; } = false;
+
     /// <summary>
-    /// Filesystem full path from root
+    /// File system full path from root
     /// </summary>
     public string FullPath { get; }
 
@@ -72,6 +74,7 @@ public class Link : IEntry
 
 
     public Uri Href { get; }
+
     //public List<PublicLinkInfo> PublicLinks => new() {new PublicLinkInfo("linked", Href) };
     public ConcurrentDictionary<string, PublicLinkInfo> PublicLinks
     {

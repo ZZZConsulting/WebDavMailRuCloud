@@ -15,6 +15,7 @@ public class CloudSettings
     public Protocol Protocol { get; set; } = Protocol.Autodetect;
 
     public int CacheListingSec { get; set; } = 30;
+    public int CacheListingSharedSec { get; set; } = 30;
 
     public int MaxConnectionCount { get; set; } = 10;
 

@@ -78,6 +78,9 @@ internal class YadItemInfoRequestMeta
 
     [JsonProperty("short_url")]
     public string UrlShort { get; set; }
+
+    [JsonProperty("group", NullValueHandling = NullValueHandling.Ignore)]
+    public GroupInfo Group { get; set; }
 }
 
 internal class YadItemInfoRequestParams

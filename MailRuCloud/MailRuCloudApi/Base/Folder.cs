@@ -130,6 +130,7 @@ public class Folder : IEntry
 
     public int? ServerFoldersCount { get; set; }
     public int? ServerFilesCount { get; set; }
+    public bool IsShared { get; set; } = false;
 
     public PublishInfo ToPublishInfo()
     {
