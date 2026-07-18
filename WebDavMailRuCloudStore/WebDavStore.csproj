@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="3.2.0" />
+    <PackageReference Include="log4net" Version="3.3.2" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
     <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
     <PackageReference Include="runtime.debian.8-x64.runtime.native.System.Security.Cryptography.OpenSsl" Version="4.3.3" />
@@ -47,9 +47,9 @@
     <PackageReference Include="runtime.ubuntu.14.04-x64.runtime.native.System.Security.Cryptography.OpenSsl" Version="4.3.3" />
     <PackageReference Include="runtime.ubuntu.16.04-x64.runtime.native.System.Security.Cryptography.OpenSsl" Version="4.3.3" />
     <PackageReference Include="runtime.ubuntu.16.10-x64.runtime.native.System.Security.Cryptography.OpenSsl" Version="4.3.3" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.10" />
-    <PackageReference Include="System.Formats.Asn1" Version="9.0.10" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.10" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.10" />
+    <PackageReference Include="System.Formats.Asn1" Version="10.0.10" />
     <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
     <PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />

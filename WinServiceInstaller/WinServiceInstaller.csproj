@@ -26,15 +26,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Core.System.Configuration.Install" Version="1.1.0" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
     <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="runtime.native.System" Version="4.3.1" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.10" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.10" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.10" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.10" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.10" />
     <PackageReference Include="System.Security.AccessControl" Version="6.0.1" />
-    <PackageReference Include="System.Security.Permissions" Version="9.0.10" />
+    <PackageReference Include="System.Security.Permissions" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'NET48'">
@@ -45,11 +46,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0-windows' or '$(TargetFramework)'=='net8.0-windows' or '$(TargetFramework)'=='net9.0-windows'">
-    <PackageReference Include="Core.System.Configuration.Install" Version="1.1.0" />
     <PackageReference Include="Core.System.ServiceProcess" Version="2.0.1" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.10" />
-    <PackageReference Include="System.Windows.Extensions" Version="9.0.10" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.10" />
+    <PackageReference Include="System.Windows.Extensions" Version="10.0.10" />
   </ItemGroup>
 
 </Project>
