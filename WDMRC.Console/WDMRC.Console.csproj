@@ -13,7 +13,7 @@
     <Authors>YaR</Authors>
     <Company />
     <Product>WebDAVCloudMailRu</Product>
-    <Copyright>MIT License, Copyright (c) 2025 YaR229 and Contributors</Copyright>
+    <Copyright>MIT License, Copyright (c) 2026 YaR229 and Contributors</Copyright>
     <Description>WebDAV emulator for RU-clouds: Cloud.Mail.Ru &amp; Disk.Yandex.Ru</Description>
     <PackageId>WebDAVCloudMailRu</PackageId>
     <AssemblyVersion>$(ReleaseVersion)</AssemblyVersion>
