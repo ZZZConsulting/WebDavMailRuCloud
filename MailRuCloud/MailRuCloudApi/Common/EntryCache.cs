@@ -134,6 +134,9 @@ public class EntryCache : IDisposable
     internal class /* это должен быть class, не struct */ CounterClass
     {
         public int Value;
+
+        // Для приостановки параллельных операций до завершения
+        public readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1);
     }
 
     public EntryCache(TimeSpan expirePeriodRegular, TimeSpan expirePeriodShared,
@@ -286,7 +289,7 @@ public class EntryCache : IDisposable
                 $"items, {partiallyExpiredCount} marked partially expired ({watch.ElapsedMilliseconds} ms)");
     }
 
-    public void RegisterOperation(string path, CounterOperation operation)
+    public void RegisterOperation(CounterOperation operation, string folderPath, string itemPath)
     {
         if (!IsCacheEnabled)
             return;
@@ -294,15 +297,38 @@ public class EntryCache : IDisposable
         // Регистрация пути файла или папки, над которым производится манипуляция
         _operationLocker.LockedAction(() =>
         {
-            if (_registeredOperationPath.TryGetValue(path, out var counter))
+            if (_registeredOperationPath.TryGetValue(itemPath, out var counter))
             {
                 counter.Value++;
             }
             else
             {
-                counter = new();
-                counter.Value = 1;
-                _registeredOperationPath.Add(path, counter);
+                counter = new()
+                {
+                    Value = 1
+                };
+                // Начало операции
+                counter.Semaphore.Wait();
+                _registeredOperationPath.Add(itemPath, counter);
+            }
+
+            if (folderPath != itemPath && folderPath is not null)
+            {
+                if (_registeredOperationPath.TryGetValue(folderPath, out var folderCounter))
+                {
+                    folderCounter.Value++;
+                }
+                else
+                {
+                    folderCounter = new()
+                    {
+                        Value = 1
+                    };
+                    // Начало операции
+                    folderCounter.Semaphore.Wait();
+
+                    _registeredOperationPath.Add(folderPath, folderCounter);
+                }
             }
         });
 
@@ -313,19 +339,45 @@ public class EntryCache : IDisposable
         }
     }
 
-    public void UnregisterOperation(string path)
+    public void UnregisterOperation(string folderPath, string itemPath)
     {
         if (!IsCacheEnabled)
             return;
 
         _operationLocker.LockedAction(() =>
         {
-            if (_registeredOperationPath.TryGetValue(path, out var counter) &&
+            if (_registeredOperationPath.TryGetValue(itemPath, out var counter) &&
                 --counter.Value <= 0)
             {
-                _registeredOperationPath.Remove(path);
+                // Окончание операции
+                counter.Semaphore.Release();
+
+                _registeredOperationPath.Remove(itemPath);
+            }
+
+            if (folderPath != itemPath && folderPath is not null)
+            {
+                if (_registeredOperationPath.TryGetValue(folderPath, out var folderCounter) &&
+                    --folderCounter.Value <= 0)
+                {
+                    // Окончание операции
+                    folderCounter.Semaphore.Release();
+
+                    _registeredOperationPath.Remove(folderPath);
+                }
             }
         });
+    }
+
+    public SemaphoreSlim GetRegisteredOperation(string path)
+    {
+        if (!IsCacheEnabled)
+            return null;
+
+        if (_registeredOperationPath.TryGetValue(path, out var counter) && counter.Value > 0)
+            return counter.Semaphore;
+
+        return null;
     }
 
     private void CheckActiveOpsAsync(object sender, System.Timers.ElapsedEventArgs e)
@@ -810,7 +862,7 @@ public class EntryCache : IDisposable
         if (!IsCacheEnabled)
             return;
 
-        IEntry createdEntry = createdEntryTask?.Result;
+        IEntry createdEntry = createdEntryTask?.ConfigureAwait(false).GetAwaiter().GetResult();
 
         if (createdEntry is null)
         {
@@ -925,7 +977,7 @@ public class EntryCache : IDisposable
         if (!IsCacheEnabled)
             return;
 
-        IEntry removedEntry = removedEntryTask?.Result;
+        IEntry removedEntry = removedEntryTask?.ConfigureAwait(false).GetAwaiter().GetResult();
 
         if (removedEntry is not null)
         {

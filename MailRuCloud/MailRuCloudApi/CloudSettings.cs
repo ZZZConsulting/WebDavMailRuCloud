@@ -40,6 +40,8 @@ public class CloudSettings
 
     public bool DisableLinkManager { get; set; }
 
+    public bool SyncFolderListing { get; set; }
+
     public int DetectActivityInterval { get; set; }
 
     public int CloudInstanceTimeoutMinutes { get; set; }

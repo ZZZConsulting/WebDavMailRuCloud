@@ -58,7 +58,7 @@ public partial class JoinCommand : SpecialCommand
 
     private async Task<SpecialCommandResult> ExecuteByLink(string path, string link)
     {
-        var k = await _cloud.CloneItem(path, link);
+        var k = await _cloud.CloneItem(link, path);
         return new SpecialCommandResult(k.IsSuccess);
     }
 

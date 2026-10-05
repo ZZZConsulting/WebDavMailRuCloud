@@ -285,6 +285,22 @@ public partial class Cloud : IDisposable
             return await RequestRepo.FolderInfo(remotePath, depth: 1, limit: 2);
         }
 
+        /*
+         * Если зарегистрирована операция для точного пути (папки), то чтение списка элементов папки приостанавливается до окончания операции.
+         * Строго после отработки fastGetFromCloud, чтобы не блокировать подтверждение завершения операций.
+         */
+        if (Settings.SyncFolderListing)
+        {
+            var waitForOperationCompletedSemaphore = _entryCache.GetRegisteredOperation(path);
+            if (waitForOperationCompletedSemaphore is not null)
+            {
+                Logger.Debug($"Folder listing suspended until all operations are completed");
+                waitForOperationCompletedSemaphore.Wait();
+                waitForOperationCompletedSemaphore.Dispose();
+            }
+        }
+
+
         (var cached, var getState) = _entryCache.Get(path);
         if (getState == EntryCache.GetState.Entry)
             return cached;
@@ -665,7 +681,7 @@ public partial class Cloud : IDisposable
             var link = await LinkManager.GetItemLink(folder.FullPath, false);
             if (link is not null)
             {
-                var cloneres = await CloneItem(destinationPath, link.Href.OriginalString);
+                var cloneres = await CloneItem(link.Href.OriginalString, destinationPath);
                 if (!cloneres.IsSuccess || WebDavPath.Name(cloneres.Path) == link.Name)
                     return cloneres.IsSuccess;
                 var renRes = await Rename(cloneres.Path, link.Name);
@@ -675,8 +691,8 @@ public partial class Cloud : IDisposable
 
         try
         {
-            _entryCache.RegisterOperation(folder.FullPath, CounterOperation.Copy);
-            _entryCache.RegisterOperation(destinationPath, CounterOperation.None);
+            _entryCache.RegisterOperation(CounterOperation.Copy, folder.FullPath, folder.FullPath);
+            _entryCache.RegisterOperation(CounterOperation.None, destinationPath, destinationPath);
 
             //var copyRes = await new CopyRequest(CloudApi, folder.FullPath, destinationPath).MakeRequestAsync(_connectionLimiter);
             var copyRes = await RequestRepo.Copy(folder.FullPath, destinationPath);
@@ -696,8 +712,8 @@ public partial class Cloud : IDisposable
         }
         finally
         {
-            _entryCache.UnregisterOperation(folder.FullPath);
-            _entryCache.UnregisterOperation(destinationPath);
+            _entryCache.UnregisterOperation(folder.FullPath, folder.FullPath);
+            _entryCache.UnregisterOperation(destinationPath, destinationPath);
         }
 
         //clone all inner links
@@ -709,7 +725,7 @@ public partial class Cloud : IDisposable
                 foreach (var linka in links)
                 {
                     var linkdest = WebDavPath.ModifyParent(linka.MapPath, WebDavPath.Parent(folder.FullPath), destinationPath);
-                    var cloneres = await CloneItem(linkdest, linka.Href.OriginalString);
+                    var cloneres = await CloneItem(linka.Href.OriginalString, linkdest);
                     if (!cloneres.IsSuccess || WebDavPath.Name(cloneres.Path) == linka.Name)
                         continue;
 
@@ -765,13 +781,13 @@ public partial class Cloud : IDisposable
     /// Copy file to another path.
     /// </summary>
     /// <param name="file">Source file info.</param>
-    /// <param name="destinationPath">Destination path.</param>
+    /// <param name="destinationFolderPath">Destination path.</param>
     /// <param name="newName">Rename target file.</param>
     /// <returns>True or false operation result.</returns>
-    public async Task<bool> Copy(File file, string destinationPath, string newName)
+    public async Task<bool> Copy(File file, string destinationFolderPath, string newName)
     {
         DateTime timestamp = DateTime.Now;
-        string destPath = destinationPath;
+        string destPath = destinationFolderPath;
         newName = string.IsNullOrEmpty(newName) ? file.Name : newName;
         bool doRename = file.Name != newName;
 
@@ -781,7 +797,7 @@ public partial class Cloud : IDisposable
             // копируем не саму ссылку, а её содержимое
             if (link is not null)
             {
-                var cloneRes = await CloneItem(destPath, link.Href.OriginalString);
+                var cloneRes = await CloneItem(link.Href.OriginalString, destPath);
                 if (!cloneRes.IsSuccess)
                     return false;
 
@@ -803,10 +819,11 @@ public partial class Cloud : IDisposable
                 .WithDegreeOfParallelism(file.Files.Count)
                 .Select(async pfile =>
                 {
+                    string folderPath = WebDavPath.Parent(pfile.FullPath);
                     try
                     {
-                        _entryCache.RegisterOperation(pfile.FullPath, CounterOperation.Copy);
-                        _entryCache.RegisterOperation(destPath, CounterOperation.None);
+                        _entryCache.RegisterOperation(CounterOperation.Copy, folderPath, pfile.FullPath);
+                        _entryCache.RegisterOperation(CounterOperation.None, destPath, destPath);
 
                         //var copyRes = await new CopyRequest(CloudApi, pfile.FullPath, destPath, ConflictResolver.Rewrite).MakeRequestAsync(_connectionLimiter);
                         var copyRes = await RequestRepo.Copy(pfile.FullPath, destPath, ConflictResolver.Rewrite);
@@ -821,8 +838,8 @@ public partial class Cloud : IDisposable
                     }
                     finally
                     {
-                        _entryCache.UnregisterOperation(pfile.FullPath);
-                        _entryCache.UnregisterOperation(destPath);
+                        _entryCache.UnregisterOperation(folderPath, pfile.FullPath);
+                        _entryCache.UnregisterOperation(destPath, destPath);
                     }
                 });
 
@@ -901,12 +918,13 @@ public partial class Cloud : IDisposable
         //rename item
         if (link is null)
         {
-            string newNamePath = WebDavPath.Combine(WebDavPath.Parent(fullPath), newName);
+            string folderPath = WebDavPath.Parent(fullPath);
+            string newNamePath = WebDavPath.Combine(folderPath, newName);
             try
             {
                 DateTime timestampBeforeOperation = DateTime.Now;
-                _entryCache.RegisterOperation(fullPath, CounterOperation.Rename);
-                _entryCache.RegisterOperation(newNamePath, CounterOperation.None);
+                _entryCache.RegisterOperation(CounterOperation.Rename, folderPath, fullPath);
+                _entryCache.RegisterOperation(CounterOperation.None, newNamePath, newNamePath);
 
                 var data = await RequestRepo.Rename(fullPath, newName);
 
@@ -930,8 +948,8 @@ public partial class Cloud : IDisposable
             }
             finally
             {
-                _entryCache.UnregisterOperation(fullPath);
-                _entryCache.UnregisterOperation(newNamePath);
+                _entryCache.UnregisterOperation(folderPath, fullPath);
+                _entryCache.UnregisterOperation(newNamePath, newNamePath);
             }
         }
 
@@ -1000,8 +1018,8 @@ public partial class Cloud : IDisposable
         try
         {
             DateTime timestampBeforeOperation = DateTime.Now;
-            _entryCache.RegisterOperation(folder.FullPath, CounterOperation.Move);
-            _entryCache.RegisterOperation(destinationPath, CounterOperation.None);
+            _entryCache.RegisterOperation(CounterOperation.Move, folder.FullPath, folder.FullPath);
+            _entryCache.RegisterOperation(CounterOperation.None, destinationPath, destinationPath);
 
             var res = await RequestRepo.Move(folder.FullPath, destinationPath);
 
@@ -1021,8 +1039,8 @@ public partial class Cloud : IDisposable
         }
         finally
         {
-            _entryCache.UnregisterOperation(folder.FullPath);
-            _entryCache.UnregisterOperation(destinationPath);
+            _entryCache.UnregisterOperation(folder.FullPath, folder.FullPath);
+            _entryCache.UnregisterOperation(destinationPath, destinationPath);
         }
 
         //clone all inner links
@@ -1037,7 +1055,7 @@ public partial class Cloud : IDisposable
                 // поэтому делаем неправильно - копируем содержимое линков
 
                 var linkdest = WebDavPath.ModifyParent(linka.MapPath, WebDavPath.Parent(folder.FullPath), destinationPath);
-                var cloneres = await CloneItem(linkdest, linka.Href.OriginalString);
+                var cloneres = await CloneItem(linka.Href.OriginalString, linkdest);
                 if (!cloneres.IsSuccess)
                     continue;
 
@@ -1075,10 +1093,11 @@ public partial class Cloud : IDisposable
             .WithDegreeOfParallelism(file.Files.Count)
             .Select(async pfile =>
             {
+                string folderPath = WebDavPath.Parent(pfile.FullPath);
                 try
                 {
-                    _entryCache.RegisterOperation(pfile.FullPath, CounterOperation.Move);
-                    _entryCache.RegisterOperation(destinationPath, CounterOperation.None);
+                    _entryCache.RegisterOperation(CounterOperation.Move, folderPath, pfile.FullPath);
+                    _entryCache.RegisterOperation(CounterOperation.None, destinationPath, destinationPath);
 
                     var moveRes = await RequestRepo.Move(pfile.FullPath, destinationPath);
 
@@ -1100,8 +1119,8 @@ public partial class Cloud : IDisposable
                 }
                 finally
                 {
-                    _entryCache.UnregisterOperation(pfile.FullPath);
-                    _entryCache.UnregisterOperation(destinationPath);
+                    _entryCache.UnregisterOperation(folderPath, pfile.FullPath);
+                    _entryCache.UnregisterOperation(destinationPath, destinationPath);
                 }
             });
 
@@ -1219,9 +1238,10 @@ public partial class Cloud : IDisposable
             }
         }
 
+        string folderPath = WebDavPath.Parent(fullPath);
         try
         {
-            _entryCache.RegisterOperation(fullPath, CounterOperation.RemoveToTrash);
+            _entryCache.RegisterOperation(CounterOperation.RemoveToTrash, folderPath, fullPath);
 
             var res = await RequestRepo.Remove(fullPath);
 
@@ -1232,7 +1252,7 @@ public partial class Cloud : IDisposable
         }
         finally
         {
-            _entryCache.UnregisterOperation(fullPath);
+            _entryCache.UnregisterOperation(folderPath, fullPath);
         }
 
         // remove inner links
@@ -1301,23 +1321,27 @@ public partial class Cloud : IDisposable
 
     public async Task<bool> CreateFolderAsync(string fullPath)
     {
+        string folderPath = WebDavPath.Parent(fullPath);
         try
         {
             DateTime timestampBeforeOperation = DateTime.Now;
 
-            _entryCache.RegisterOperation(fullPath, CounterOperation.NewFolder);
+            _entryCache.RegisterOperation(CounterOperation.NewFolder, folderPath, fullPath);
 
             var res = await RequestRepo.CreateFolder(fullPath);
 
             if (!res.IsSuccess)
                 return false;
 
-            _entryCache.OnCreate(timestampBeforeOperation,
-                fullPath, GetItemAsync(fullPath, fastGetFromCloud: true), null);
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                fullPath,
+                GetItemAsync(fullPath, fastGetFromCloud: true),
+                null);
         }
         finally
         {
-            _entryCache.UnregisterOperation(fullPath);
+            _entryCache.UnregisterOperation(folderPath, fullPath);
         }
 
         return true;
@@ -1329,28 +1353,32 @@ public partial class Cloud : IDisposable
     //}
 
 
-    public async Task<CloneItemResult> CloneItem(string toPath, string fromUrl)
+    public async Task<CloneItemResult> CloneItem(string sourcePath, string destinationPath)
     {
+        string folderPath = WebDavPath.Parent(sourcePath);
         try
         {
             DateTime timestampBeforeOperation = DateTime.Now;
-            _entryCache.RegisterOperation(toPath, CounterOperation.Copy);
-            _entryCache.RegisterOperation(fromUrl, CounterOperation.None);
+            _entryCache.RegisterOperation(CounterOperation.None, folderPath, sourcePath);
+            _entryCache.RegisterOperation(CounterOperation.Copy, destinationPath, destinationPath);
 
-            var res = await RequestRepo.CloneItem(fromUrl, toPath);
+            var res = await RequestRepo.CloneItem(sourcePath, destinationPath);
 
             if (!res.IsSuccess)
                 return res;
 
-            _entryCache.OnCreate(timestampBeforeOperation,
-                toPath, GetItemAsync(toPath, fastGetFromCloud: true), null);
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                destinationPath,
+                GetItemAsync(destinationPath, fastGetFromCloud: true),
+                null);
 
             return res;
         }
         finally
         {
-            _entryCache.UnregisterOperation(toPath);
-            _entryCache.UnregisterOperation(fromUrl);
+            _entryCache.UnregisterOperation(folderPath, sourcePath);
+            _entryCache.UnregisterOperation(destinationPath, destinationPath);
         }
     }
 
@@ -1390,13 +1418,17 @@ public partial class Cloud : IDisposable
 
     public void OnBeforeUpload(string path)
     {
-        _entryCache.RegisterOperation(path, CounterOperation.Upload);
+        _entryCache.RegisterOperation(CounterOperation.Upload, WebDavPath.Parent(path), path);
     }
 
     public void OnAfterUpload(string path, DateTime timestampBeforeOperation)
     {
-        _entryCache.OnCreate(timestampBeforeOperation, path, GetItemAsync(path, fastGetFromCloud: true), null);
-        _entryCache.UnregisterOperation(path);
+        _entryCache.OnCreate(
+            timestampBeforeOperation,
+            path,
+            GetItemAsync(path, fastGetFromCloud: true),
+            null);
+        _entryCache.UnregisterOperation(WebDavPath.Parent(path), path);
     }
 
     public T DownloadFileAsJson<T>(File file)
@@ -1500,7 +1532,11 @@ public partial class Cloud : IDisposable
         if (res)
         {
             LinkManager.Save();
-            _entryCache.OnCreate(timestampBeforeOperation, path, GetItemAsync(path, fastGetFromCloud: true), null);
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                path,
+                GetItemAsync(path, fastGetFromCloud: true),
+                null);
         }
         return res;
     }
@@ -1523,26 +1559,31 @@ public partial class Cloud : IDisposable
          */
         string name = WebDavPath.Name(fullFilePath);
         string newName = Cloud.ReplaceBadSymbols(name);
+        string folderPath = WebDavPath.Parent(fullFilePath);
         if (newName != name)
-            fullFilePath = WebDavPath.Combine(WebDavPath.Parent(fullFilePath), newName);
+            fullFilePath = WebDavPath.Combine(folderPath, newName);
 
         try
         {
             DateTime timestampBeforeOperation = DateTime.Now;
-            _entryCache.RegisterOperation(fullFilePath, CounterOperation.Upload);
+            _entryCache.RegisterOperation(CounterOperation.Upload, folderPath, fullFilePath);
 
             var res = await RequestRepo.AddFile(fullFilePath, hash, size, DateTime.Now, conflict);
 
             if (!res.Success)
                 return res;
 
-            _entryCache.OnCreate(timestampBeforeOperation, fullFilePath, GetItemAsync(fullFilePath, fastGetFromCloud: true), null);
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                fullFilePath,
+                GetItemAsync(fullFilePath, fastGetFromCloud: true),
+                null);
 
             return res;
         }
         finally
         {
-            _entryCache.UnregisterOperation(fullFilePath);
+            _entryCache.UnregisterOperation(folderPath, fullFilePath);
         }
     }
 
@@ -1558,10 +1599,12 @@ public partial class Cloud : IDisposable
         if (file.LastWriteTimeUtc == dateTime)
             return true;
 
+        string folderPath = WebDavPath.Parent(file.FullPath);
+
         try
         {
             DateTime timestampBeforeOperation = DateTime.Now;
-            _entryCache.RegisterOperation(file.FullPath, CounterOperation.Upload);
+            _entryCache.RegisterOperation(CounterOperation.Upload, folderPath, file.FullPath);
 
             var res = await RequestRepo.AddFile(file.FullPath, file.Hash, file.Size, dateTime, ConflictResolver.Rename);
 
@@ -1570,13 +1613,18 @@ public partial class Cloud : IDisposable
 
             file.LastWriteTimeUtc = dateTime;
 
-            _entryCache.OnCreate(timestampBeforeOperation, file.FullPath, GetItemAsync(file.FullPath, fastGetFromCloud: true), null);
+            _entryCache.OnCreate(
+                timestampBeforeOperation,
+                file.FullPath,
+                GetItemAsync(file.FullPath,
+                fastGetFromCloud: true),
+                null);
 
             return true;
         }
         finally
         {
-            _entryCache.UnregisterOperation(file.FullPath);
+            _entryCache.UnregisterOperation(folderPath, file.FullPath);
         }
     }
 

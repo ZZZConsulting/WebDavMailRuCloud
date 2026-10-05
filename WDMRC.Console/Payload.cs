@@ -65,6 +65,7 @@ namespace YaR.Clouds.Console
                 Proxy = ProxyFabric.Get(options.ProxyAddress, options.ProxyUser, options.ProxyPassword),
 
                 DisableLinkManager = options.DisableLinkManager,
+                SyncFolderListing = options.SyncFolderListing,
                 DetectActivityInterval = options.DetectActivityInterval,
 
                 CloudInstanceTimeoutMinutes = options.CloudInstanceTimeoutMinutes,
@@ -234,8 +235,10 @@ namespace YaR.Clouds.Console
             Logger.Info($"Track changes on Yandex.Disk made behind the Emulator: " +
                 $"{(options.DetectActivityInterval == 0 ? "disabled" : $"every {options.DetectActivityInterval} sec")}");
             Logger.Info($"Folder cache expiration timeout: {options.CacheListingSec} sec");
-            Logger.Info($"Shared folder cache expiration timeout: {options.CacheListingSharedSec} sec");
+            Logger.Info($"Shared folder cache expiration timeout: " +
+                $"{(options.CacheListingSharedSec < 0 ? options.CacheListingSec : options.CacheListingSharedSec)} sec");
             Logger.Info($"List query folder depth: {options.CacheListingDepth}");
+            Logger.Info($"Delay folder listing until end of file operations: {options.SyncFolderListing}");
             Logger.Info($"Use locks: {options.UseLocks}");
             Logger.Info($"Support links in /item.links.wdmrc: {(!options.DisableLinkManager)}");
             Logger.Info($"Use deduplicate: {options.UseDeduplicate}");

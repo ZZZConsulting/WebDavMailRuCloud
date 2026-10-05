@@ -16,7 +16,8 @@ internal class YadModelV2FolderInfo : YadModelV2
             Path = WebDavPath.Combine(pathPrefix, path),
             Amount = Amount,
             Offset = Offset,
-            WithParent = WithParent ? "1" : "0"
+            WithParent = WithParent ? "1" : "0",
+            WithShare = WithShare ? "1" : "0"
         };
     }
 
@@ -42,6 +43,7 @@ internal class YadModelV2FolderInfo : YadModelV2
     public int Offset { get; set; } = 0;
     public int Amount { get; set; } = int.MaxValue;
     public bool WithParent { get; set; } = false;
+    public bool WithShare { get; set; } = true;
 }
 
 public class YadRequestV2FolderInfo : YadRequestV2Parameter
@@ -63,6 +65,9 @@ public class YadRequestV2FolderInfo : YadRequestV2Parameter
 
     [JsonProperty("withParent")]
     public string WithParent { get; set; }
+
+    [JsonProperty("withShare")]
+    public string WithShare { get; set; }
 }
 
 internal class YadResponseV2FolderInfo : YadResponseV2Error

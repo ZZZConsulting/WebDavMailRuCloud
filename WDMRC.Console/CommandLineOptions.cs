@@ -90,5 +90,9 @@ namespace YaR.Clouds.Console
 
         [Option("service", Required = false, Default = false, HelpText = "Started as a service")]
         public bool ServiceRun { get; set; }
+
+        [Option("sync-folder-listing", Required = false, Default = false,
+            HelpText = "Delay folder listing requests until any file operations are completed in the folder")]
+        public bool SyncFolderListing { get; set; }
     }
 }

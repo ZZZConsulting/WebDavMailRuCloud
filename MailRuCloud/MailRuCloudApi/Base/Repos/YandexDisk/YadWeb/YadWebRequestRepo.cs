@@ -299,7 +299,7 @@ internal class YadWebRequestRepo : IRequestRepo
             () =>
             {
                 var folderTask = new YadCommonRequestV2(HttpSettings, YadAuth, _connectionLimiter)
-                                     .Get(new YadModelV2FolderInfo(path.Path) { WithParent = true });
+                                     .Get(new YadModelV2FolderInfo(path.Path) { WithParent = true, WithShare = true });
 
                 folderInfo = folderTask.Result;
                 return folderInfo;

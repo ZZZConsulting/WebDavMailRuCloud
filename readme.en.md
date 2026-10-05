@@ -62,6 +62,7 @@ In case you need that in English, please let me know. Or just use
                         see Using deduplication section of the README.
   --disable-links       (Default: false) Disable support for shared folder and links
                         stored in item.links.wdmrc files.
+  --sync-folder-listing (Default: false) Delay folder listing requests until any file operations are completed in the folder.
   --detect-activity-interval
                         (Default: 15) Interval of time in seconds to track changes on Disk.Yandex
                         made without Emulator to reset in-memory cache,
