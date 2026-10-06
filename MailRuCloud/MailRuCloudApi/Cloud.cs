@@ -295,8 +295,15 @@ public partial class Cloud : IDisposable
             if (waitForOperationCompletedSemaphore is not null)
             {
                 Logger.Debug($"Folder listing suspended until all operations are completed");
-                waitForOperationCompletedSemaphore.Wait(TimeSpan.FromSeconds(120));
-                waitForOperationCompletedSemaphore.Release();
+                try
+                {
+                    waitForOperationCompletedSemaphore.Wait(TimeSpan.FromSeconds(120));
+                }
+                catch { }
+                finally
+                {
+                    waitForOperationCompletedSemaphore.Release();
+                }
             }
         }
 
