@@ -173,7 +173,7 @@ public class LinkManager
             return false;
 
         _itemList.Items.Remove(z);
-        _linkCache.OnRemoveTree(DateTime.MaxValue, path, null);
+        _linkCache.OnRemoveTreeAndCreate(DateTime.MaxValue, path, null, null, null, null);
 
         if (doSave)
             Save();

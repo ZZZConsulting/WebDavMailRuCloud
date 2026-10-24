@@ -20,65 +20,60 @@ public static class WebDavPath
         if (b is null)
             return Clean(a, false);
 
-        StringBuilder right = CleanSb(b, false);
+        string right = Clean(b, false);
 
         if (a == "/disk")
-        {
-            right.Insert(0, a);
-            if (right[right.Length - 1] == '/')
-                right.Remove(right.Length - 1, 1);
-            return right.ToString();
-        }
+            return b == Root ? "/disk" : "/disk" + right;
+
         if (a == Root)
-            return right.ToString();
+            return right;
 
-        StringBuilder left = CleanSb(a, false);
+        string left = Clean(a, false);
 
-#if NET48
-        left.Append(right.ToString());
-#else
-        left.Append(right);
-#endif
-
-        return left.ToString();
-
+        return left + right;
     }
 
-    public static StringBuilder CleanSb(string path, bool doAddFinalSeparator = false)
+    public static string Clean(string path, bool doAddFinalSeparator = false)
     {
         try
         {
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
 
-            StringBuilder text = new StringBuilder(path);
-            text.Replace("\\", "/").Replace("//", "/");
-            if (doAddFinalSeparator)
+            bool replaceSlash = path.Contains("\\") || path.Contains("//");
+            bool insSlash = path.Length == 0 || path[0] != '/' && path[0] != '\\';
+            bool addSlash = path.Length > 0 && doAddFinalSeparator && path[^1] != '/' && path[^1] != '\\';
+            bool removeSlash = path.Length > 1 && (path[^1] == '/' || path[^1] == '\\');
+
+            if ((replaceSlash ? 1 : 0) + (insSlash ? 1 : 0) + (addSlash ? 1 : 0) + (removeSlash ? 1 : 0) > 1)
             {
-                if (text.Length == 0 || text[^1] != '/')
+                StringBuilder text = new StringBuilder(path);
+                text.Replace("\\", "/").Replace("//", "/");
+
+                if (insSlash)
+                    text.Insert(0, '/');
+                if (addSlash)
                     text.Append('/');
-            }
-            else
-            {
-                if (text.Length > 1 && text[^1] == '/')
+                if (removeSlash)
                     text.Remove(text.Length - 1, 1);
+
+                return text.ToString();
             }
 
-            if (text.Length == 0 || text[0] != '/')
-                text.Insert(0, '/');
+            if (insSlash)
+                return "/" + path;
+            if (addSlash)
+                return path + "/";
+            if (removeSlash)
+                return path.Remove(path.Length - 1, 1);
 
-            return text;
+            return path;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
         }
-    }
-
-    public static string Clean(string path, bool doAddFinalSeparator = false)
-    {
-        return CleanSb(path, doAddFinalSeparator).ToString();
     }
 
     public static string Parent(string path, string cmdPrefix = ">>")
@@ -147,14 +142,14 @@ public static class WebDavPath
             if (child[parent.Length - 1] == '/' && child[parent.Length] != '/')
                 start = parent.Length;
             else
-            // Если у родителя последний символ был не /, то у потомка следующий символ должен быть /
-            if (child[parent.Length - 1] != '/' && child[parent.Length] == '/')
-                start = parent.Length + 1;
-            else
-            {
-                // Тут какая-то ерунду с символами, это не родитель и потоком
-                return false;
-            }
+                // Если у родителя последний символ был не /, то у потомка следующий символ должен быть /
+                if (child[parent.Length - 1] != '/' && child[parent.Length] == '/')
+                    start = parent.Length + 1;
+                else
+                {
+                    // Тут какая-то ерунду с символами, это не родитель и потоком
+                    return false;
+                }
             int end = child[child.Length - 1] == '/' ? child.Length - 1 : child.Length;
 
             // Исключая возможный / в конце и исключая часть, совпадающую с родителем,
@@ -217,8 +212,8 @@ public static class WebDavPath
         if (path.Length < oldParent.Length)
             throw new ArgumentException($"Value of {nameof(oldParent)} is longer then length of {nameof(path)}");
 
-        StringBuilder pathTmp = CleanSb(path, true);
-        StringBuilder oldParentTmp = CleanSb(oldParent, true);
+        string pathTmp = Clean(path, true);
+        string oldParentTmp = Clean(oldParent, true);
         path = pathTmp.Remove(0, oldParentTmp.Length).ToString();
 
         return Combine(newParent, path);

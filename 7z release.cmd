@@ -1,4 +1,4 @@
-set ver=1.26.10.06
+set ver=1.26.10.07
 set options=-tzip -mx9 -r -sse -x!*.pdb -x!*dev*
 set dest=d:\temp\release
 

@@ -136,7 +136,7 @@ public class EntryCache : IDisposable
         public int Value;
 
         // Для приостановки параллельных операций до завершения
-        public readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1);
+        public readonly ManualResetEventSlim FolderListingEnabled = new ManualResetEventSlim(true);
     }
 
     public EntryCache(TimeSpan expirePeriodRegular, TimeSpan expirePeriodShared,
@@ -307,28 +307,23 @@ public class EntryCache : IDisposable
                 {
                     Value = 1
                 };
-                // Начало операции
-                counter.Semaphore.Wait();
                 _registeredOperationPath.Add(itemPath, counter);
             }
 
-            if (folderPath != itemPath && folderPath is not null)
+            if (folderPath is not null)
             {
+                folderPath = WebDavPath.Clean(folderPath);
                 if (_registeredOperationPath.TryGetValue(folderPath, out var folderCounter))
                 {
                     folderCounter.Value++;
                 }
                 else
                 {
-                    folderCounter = new()
-                    {
-                        Value = 1
-                    };
-                    // Начало операции
-                    folderCounter.Semaphore.Wait();
-
+                    folderCounter = new() { Value = 1 };
                     _registeredOperationPath.Add(folderPath, folderCounter);
                 }
+                // Начало операции
+                folderCounter.FolderListingEnabled.Reset();
             }
         });
 
@@ -349,33 +344,29 @@ public class EntryCache : IDisposable
             if (_registeredOperationPath.TryGetValue(itemPath, out var counter) &&
                 --counter.Value <= 0)
             {
-                // Окончание операции
-                counter.Semaphore.Release();
-
                 _registeredOperationPath.Remove(itemPath);
             }
 
-            if (folderPath != itemPath && folderPath is not null)
+            if (folderPath is not null)
             {
                 if (_registeredOperationPath.TryGetValue(folderPath, out var folderCounter) &&
                     --folderCounter.Value <= 0)
                 {
-                    // Окончание операции
-                    folderCounter.Semaphore.Release();
-
                     _registeredOperationPath.Remove(folderPath);
+                    // Окончание операции
+                    folderCounter.FolderListingEnabled.Set();
                 }
             }
         });
     }
 
-    public SemaphoreSlim GetRegisteredOperation(string path)
+    public ManualResetEventSlim GetRegisteredOperation(string path)
     {
         if (!IsCacheEnabled)
             return null;
 
         if (_registeredOperationPath.TryGetValue(path, out var counter) && counter.Value > 0)
-            return counter.Semaphore;
+            return counter.FolderListingEnabled;
 
         return null;
     }
@@ -856,132 +847,18 @@ public class EntryCache : IDisposable
         }
     }
 
-    public void OnCreate(DateTime operationStartTimestamp,
-        string createdItemFullPath, Task<IEntry> createdEntryTask, string ignoreItemFullPath)
+    public void OnRemoveTreeAndCreate(DateTime operationStartTimestamp,
+        string removedItemFullPath, IEntry removedEntry,
+        string createdItemFullPath, IEntry createdEntry, string ignoreItemFullPath)
     {
         if (!IsCacheEnabled)
             return;
 
-        IEntry createdEntry = createdEntryTask?.ConfigureAwait(false).GetAwaiter().GetResult();
-
-        if (createdEntry is null)
+        if (removedItemFullPath is not null && removedEntry is not null ||
+            createdItemFullPath is not null && createdEntry is null)
         {
             // Если операция должна была создать элемент, но он не получен с сервера,
-            // это не нормальная ситуация.
-            // Сбрасываем весь кеш, чтобы все перечитать заново на всякий случай.
-            Clear();
-            return;
-        }
-        else
-        {
-            _rootLocker.LockedActionAsync(() =>
-            {
-                //string itemToCheckUnder = createdItemFullPath;
-
-                bool removed = _root.TryRemove(createdItemFullPath, out var cachedItem);
-
-                // Добавить новый
-                if (createdEntry is File file)
-                {
-                    // Проверка чтобы не добавлять в кеш файлы вида test.csv.wdmrc.001b, создаваемые в зашифрованных папках
-                    if (file.ServiceInfo.CleanName == file.Name)
-                        AddInternal(file, DateTime.Now);
-                }
-                else
-                    if (createdEntry is Folder folder)
-                    {
-                        /* Данный метод вызывается для созданных и переименованных файлов и папок.
-                         * С сервера читали entry самой папки и одного вложенного элемента.
-                         * Если Descendants.Count равен 0, то можно ставить
-                         * IsChildrenLoaded = true, т.к. ничего вложенного нет.
-                         * Но если Descendants.Count>0, тогда IsChildrenLoaded = false,
-                         * т.к. что-то внутри есть, но мы не читали полный список содержимого.
-                         * IsChildrenLoaded ставится в true,
-                         * чтобы последующие чтения entry созданного элемента
-                         * читались из кеша, а не находили только entry от директории
-                         * без потомков, что автоматически приводит к игнорированию кеша.
-                         */
-                        folder.IsChildrenLoaded = folder.Descendants.Count == 0;
-                        AddWithChildren(folder, DateTime.Now);
-                    }
-                // После добавления или обновления элемента надо обновить родителя,
-                // если у него AllDescendantsInCache=true, иначе нет смысла
-                string parent = WebDavPath.Parent(createdItemFullPath);
-                if (createdItemFullPath != WebDavPath.Root &&
-                    _root.TryGetValue(parent, out var parentEntry) &&
-                    parentEntry.Entry is Folder fld &&
-                    parentEntry.AllDescendantsInCache)
-                {
-                    //itemToCheckUnder = fld.FullPath;
-                    /*
-                     * Внимание! У добавляемого в кеш folder список Descendants всегда пустой!
-                     * Он специально очищается, чтобы не было соблазна им пользоваться!
-                     * Содержимое папки берется не из этого списка, а собирается из кеша по path всех entry.
-                     * В кеше у папок Descendants всегда = ImmutableList<IEntry>.Empty
-                     */
-                    if (removed && cachedItem?.Entry is not null)
-                    {
-                        if (cachedItem.Entry.IsFile)
-                        {
-                            if (fld.ServerFilesCount.HasValue && fld.ServerFilesCount > 0)
-                                fld.ServerFilesCount--;
-                        }
-                        else
-                        {
-                            if (fld.ServerFoldersCount.HasValue && fld.ServerFoldersCount > 0)
-                                fld.ServerFoldersCount--;
-                        }
-                    }
-                    if (createdEntry.IsFile)
-                    {
-                        if (fld.ServerFilesCount.HasValue)
-                            fld.ServerFilesCount++;
-                    }
-                    else
-                    {
-                        if (fld.ServerFoldersCount.HasValue)
-                            fld.ServerFoldersCount++;
-                    }
-                }
-
-                //if (operationStartTimestamp != DateTime.MaxValue)
-                //{
-                //    foreach (var cacheItem in _root)
-                //    {
-                //        if (!WebDavPath.IsParent(createdItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false) &&
-                //            (string.IsNullOrEmpty(ignoreItemFullPath)
-                //            || !WebDavPath.IsParent(ignoreItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false)) &&
-                //            WebDavPath.IsParent(itemToCheckUnder, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
-                //        {
-                //            if (cacheItem.Value.CreationTime > operationStartTimestamp)
-                //            {
-                //                /*
-                //                 * Если после начала операции,
-                //                 * в дереве элементов ниже родителя созданного элемента
-                //                 * появился новый элемент, это означает,
-                //                 * что были какие-то параллельные операции.
-                //                 * В таком случае на всякий случай лучше сделать полный сброс кеша.
-                //                 */
-                //                ClearNoLock();
-                //                return;
-                //            }
-                //        }
-                //    }
-                //}
-            });
-        }
-    }
-
-    public void OnRemoveTree(DateTime operationStartTimestamp, string removedItemFullPath, Task<IEntry> removedEntryTask)
-    {
-        if (!IsCacheEnabled)
-            return;
-
-        IEntry removedEntry = removedEntryTask?.ConfigureAwait(false).GetAwaiter().GetResult();
-
-        if (removedEntry is not null)
-        {
-            // Если операция удалила элемент, но он снова получен с сервера,
+            // или должна была удалить элемент, но он снова получен с сервера,
             // это не нормальная ситуация.
             // Сбрасываем весь кеш, чтобы все перечитать заново на всякий случай.
             Logger.Error("Cache algorithm failed. Cache is purged.");
@@ -990,76 +867,181 @@ public class EntryCache : IDisposable
         }
         else
         {
-            // Нового элемента на сервере нет,
-            // очищаем кеш от элемента и всего, что под ним
             _rootLocker.LockedActionAsync(() =>
             {
-                //string itemToCheckUnder = removedItemFullPath;
-
-                // Если элемент был, а нового нет, надо удалить его у родителя,
-                // чтобы не перечитывать родителя целиком с сервера,
-                // но только, если у родителя AllDescendantsInCache=true, иначе нет смысла
-                if (removedItemFullPath != WebDavPath.Root &&
-                    _root.TryGetValue(WebDavPath.Parent(removedItemFullPath), out var parentEntry) &&
-                    parentEntry.Entry is Folder fld &&
-                    parentEntry.AllDescendantsInCache)
+                if (removedItemFullPath is not null)
                 {
-                    //itemToCheckUnder = fld.FullPath;
-                    /*
-                     * Внимание! У добавляемого в кеш folder список Descendants всегда пустой!
-                     * Он специально очищается, чтобы не было соблазна им пользоваться!
-                     * Содержимое папки берется не из этого списка, а собирается из кеша по path всех entry.
-                     * В кеше у папок Descendants всегда = ImmutableList<IEntry>.Empty
-                     */
-                    if (_root.TryRemove(removedItemFullPath, out var cachedItem))
+                    #region Удаление
+
+                    //string itemToCheckUnder = removedItemFullPath;
+
+                    // Если элемент был, а нового нет, надо удалить его у родителя,
+                    // чтобы не перечитывать родителя целиком с сервера,
+                    // но только, если у родителя AllDescendantsInCache=true, иначе нет смысла
+                    if (removedItemFullPath != WebDavPath.Root &&
+                        _root.TryGetValue(WebDavPath.Parent(removedItemFullPath), out var parentEntry) &&
+                        parentEntry.Entry is Folder fld &&
+                        parentEntry.AllDescendantsInCache)
                     {
-                        if (cachedItem.Entry.IsFile)
+                        //itemToCheckUnder = fld.FullPath;
+                        /*
+                         * Внимание! У добавляемого в кеш folder список Descendants всегда пустой!
+                         * Он специально очищается, чтобы не было соблазна им пользоваться!
+                         * Содержимое папки берется не из этого списка, а собирается из кеша по path всех entry.
+                         * В кеше у папок Descendants всегда = ImmutableList<IEntry>.Empty
+                         */
+                        if (_root.TryRemove(removedItemFullPath, out var cachedItem))
                         {
-                            if (fld.ServerFilesCount.HasValue && fld.ServerFilesCount > 0)
-                                fld.ServerFilesCount--;
+                            if (cachedItem.Entry.IsFile)
+                            {
+                                if (fld.ServerFilesCount.HasValue && fld.ServerFilesCount > 0)
+                                    fld.ServerFilesCount--;
+                            }
+                            else
+                            {
+                                if (fld.ServerFoldersCount.HasValue && fld.ServerFoldersCount > 0)
+                                    fld.ServerFoldersCount--;
+                            }
+                        }
+                    }
+
+                    foreach (var cacheItem in _root)
+                    {
+                        //if (operationStartTimestamp != DateTime.MaxValue &&
+                        //    WebDavPath.IsParent(itemToCheckUnder, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
+                        //{
+                        //    if (cacheItem.Value.CreationTime > operationStartTimestamp)
+                        //    {
+                        //        /*
+                        //         * Если после начала операции,
+                        //         * в дереве элементов ниже родителя удаленного элемента
+                        //         * появился новый элемент, это означает,
+                        //         * что были какие-то параллельные операции.
+                        //         * В таком случае на всякий случай лучше сделать полный сброс кеша.
+                        //         */
+                        //        ClearNoLock();
+                        //        return;
+                        //    }
+                        //}
+
+                        if (WebDavPath.IsParent(removedItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
+                        {
+                            cacheItem.Value.ExpirationTime = DateTime.MinValue;
+                        }
+                    }
+
+                    // Добавляем информацию о том, что на сервере нет элемента с таким путем,
+                    // т.к. он был удален, а нового (из newEntryTask) нет.
+                    var deletedItem = new CacheItem()
+                    {
+                        Entry = null,
+                        AllDescendantsInCache = true,
+                        ExpirationTime = DateTime.Now + (ExpirePeriodShared < ExpirePeriod ? ExpirePeriodShared : ExpirePeriod),
+                    };
+                    _root.TryAdd(removedItemFullPath, deletedItem);
+
+                    #endregion Удаление
+                }
+
+                if (createdItemFullPath is not null)
+                {
+                    #region Добавление
+
+                    //string itemToCheckUnder = createdItemFullPath;
+
+                    bool removed = _root.TryRemove(createdItemFullPath, out var cachedItem);
+
+                    // Добавить новый
+                    if (createdEntry is File file)
+                    {
+                        // Проверка чтобы не добавлять в кеш файлы вида test.csv.wdmrc.001b, создаваемые в зашифрованных папках
+                        if (file.ServiceInfo.CleanName == file.Name)
+                            AddInternal(file, DateTime.Now);
+                    }
+                    else
+                        if (createdEntry is Folder folder)
+                        {
+                            /* Данный метод вызывается для созданных и переименованных файлов и папок.
+                             * С сервера читали entry самой папки и одного вложенного элемента.
+                             * Если Descendants.Count равен 0, то можно ставить
+                             * IsChildrenLoaded = true, т.к. ничего вложенного нет.
+                             * Но если Descendants.Count>0, тогда IsChildrenLoaded = false,
+                             * т.к. что-то внутри есть, но мы не читали полный список содержимого.
+                             * IsChildrenLoaded ставится в true,
+                             * чтобы последующие чтения entry созданного элемента
+                             * читались из кеша, а не находили только entry от директории
+                             * без потомков, что автоматически приводит к игнорированию кеша.
+                             */
+                            folder.IsChildrenLoaded = folder.Descendants.Count == 0;
+                            AddWithChildren(folder, DateTime.Now);
+                        }
+                    // После добавления или обновления элемента надо обновить родителя,
+                    // если у него AllDescendantsInCache=true, иначе нет смысла
+                    string parent = WebDavPath.Parent(createdItemFullPath);
+                    if (createdItemFullPath != WebDavPath.Root &&
+                        _root.TryGetValue(parent, out var parentEntry) &&
+                        parentEntry.Entry is Folder fld &&
+                        parentEntry.AllDescendantsInCache)
+                    {
+                        //itemToCheckUnder = fld.FullPath;
+                        /*
+                         * Внимание! У добавляемого в кеш folder список Descendants всегда пустой!
+                         * Он специально очищается, чтобы не было соблазна им пользоваться!
+                         * Содержимое папки берется не из этого списка, а собирается из кеша по path всех entry.
+                         * В кеше у папок Descendants всегда = ImmutableList<IEntry>.Empty
+                         */
+                        if (removed && cachedItem?.Entry is not null)
+                        {
+                            if (cachedItem.Entry.IsFile)
+                            {
+                                if (fld.ServerFilesCount.HasValue && fld.ServerFilesCount > 0)
+                                    fld.ServerFilesCount--;
+                            }
+                            else
+                            {
+                                if (fld.ServerFoldersCount.HasValue && fld.ServerFoldersCount > 0)
+                                    fld.ServerFoldersCount--;
+                            }
+                        }
+                        if (createdEntry.IsFile)
+                        {
+                            if (fld.ServerFilesCount.HasValue)
+                                fld.ServerFilesCount++;
                         }
                         else
                         {
-                            if (fld.ServerFoldersCount.HasValue && fld.ServerFoldersCount > 0)
-                                fld.ServerFoldersCount--;
+                            if (fld.ServerFoldersCount.HasValue)
+                                fld.ServerFoldersCount++;
                         }
                     }
-                }
 
-                foreach (var cacheItem in _root)
-                {
-                    //if (operationStartTimestamp != DateTime.MaxValue &&
-                    //    WebDavPath.IsParent(itemToCheckUnder, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
+                    //if (operationStartTimestamp != DateTime.MaxValue)
                     //{
-                    //    if (cacheItem.Value.CreationTime > operationStartTimestamp)
+                    //    foreach (var cacheItem in _root)
                     //    {
-                    //        /*
-                    //         * Если после начала операции,
-                    //         * в дереве элементов ниже родителя удаленного элемента
-                    //         * появился новый элемент, это означает,
-                    //         * что были какие-то параллельные операции.
-                    //         * В таком случае на всякий случай лучше сделать полный сброс кеша.
-                    //         */
-                    //        ClearNoLock();
-                    //        return;
+                    //        if (!WebDavPath.IsParent(createdItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false) &&
+                    //            (string.IsNullOrEmpty(ignoreItemFullPath)
+                    //            || !WebDavPath.IsParent(ignoreItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false)) &&
+                    //            WebDavPath.IsParent(itemToCheckUnder, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
+                    //        {
+                    //            if (cacheItem.Value.CreationTime > operationStartTimestamp)
+                    //            {
+                    //                /*
+                    //                 * Если после начала операции,
+                    //                 * в дереве элементов ниже родителя созданного элемента
+                    //                 * появился новый элемент, это означает,
+                    //                 * что были какие-то параллельные операции.
+                    //                 * В таком случае на всякий случай лучше сделать полный сброс кеша.
+                    //                 */
+                    //                ClearNoLock();
+                    //                return;
+                    //            }
+                    //        }
                     //    }
                     //}
 
-                    if (WebDavPath.IsParent(removedItemFullPath, cacheItem.Key, selfTrue: true, oneLevelDistanceOnly: false))
-                    {
-                        cacheItem.Value.ExpirationTime = DateTime.MinValue;
-                    }
+                    #endregion Добавление
                 }
-
-                // Добавляем информацию о том, что на сервере нет элемента с таким путем,
-                // т.к. он был удален, а нового (из newEntryTask) нет.
-                var deletedItem = new CacheItem()
-                {
-                    Entry = null,
-                    AllDescendantsInCache = true,
-                    ExpirationTime = DateTime.Now + (ExpirePeriodShared < ExpirePeriod ? ExpirePeriodShared : ExpirePeriod),
-                };
-                _root.TryAdd(removedItemFullPath, deletedItem);
             });
         }
     }
