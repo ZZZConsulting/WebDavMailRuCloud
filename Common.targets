@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
-		<CommonTargetFrameworks>net48;net8.0;net8.0-windows;net9.0;net9.0-windows</CommonTargetFrameworks>
+		<CommonTargetFrameworks>net9.0-windows;net48;net8.0;net8.0-windows;net9.0</CommonTargetFrameworks>
 		<CommonLangVersion>latest</CommonLangVersion>
-		<ReleaseVersion>1.26.10.07</ReleaseVersion>
+		<ReleaseVersion>1.26.10.25</ReleaseVersion>
 	</PropertyGroup>
 </Project>

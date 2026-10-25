@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Security.Authentication;
@@ -166,7 +165,6 @@ namespace NWebDav.Server
                     if (excListener.ErrorCode != ERROR_OPERATION_ABORTED)
                         throw;
                 }
-
                 catch (AggregateException aex) when (aex.InnerExceptions.Count == 1 &&
                                                      aex.InnerExceptions[0] is AuthenticationException auex)
                 {
@@ -175,7 +173,6 @@ namespace NWebDav.Server
                     httpContext.Response.StatusDescription = $"{status.GetStatusDescription()}: {auex.Message}";
                     s_log.Log(LogLevel.Error, $"Error while handling request (method={request.HttpMethod}, url={request.Url} {httpContext.Response.StatusDescription}");
                 }
-
                 catch (Exception exc)
                 {
                     s_log.Log(LogLevel.Error, $"Unexpected exception while handling request (method={request.HttpMethod}, url={request.Url}, source={request.RemoteEndPoint}", exc);
@@ -209,9 +206,10 @@ namespace NWebDav.Server
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383(v=vs.85).aspx
         // An operation was attempted on a nonexistent network connection.
         private const int ERROR_CONNECTION_INVALID = 1229;
+
         // The specified network name is no longer available.
         private const int ERROR_NETNAME_DELETED = 64;
+
         private const int ERROR_OPERATION_ABORTED = 995;
     }
 }
-

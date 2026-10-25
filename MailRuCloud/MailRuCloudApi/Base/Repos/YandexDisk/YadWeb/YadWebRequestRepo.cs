@@ -663,41 +663,48 @@ internal class YadWebRequestRepo : IRequestRepo
 
     public virtual Task<CheckUpInfo> DetectOutsideChanges()
     {
-        // Список все еще продолжающихся операций
-        var operationsTask = new YadCommonRequestV2(HttpSettings, YadAuth, _connectionLimiter)
-                        .Get(new YadModelV2ActiveOperationsV2());
-
-        // Надо учитывать, что счетчики обновляются через 10-15 секунд после операции
-        var countersTask = new YadCommonRequestV2(HttpSettings, YadAuth, _connectionLimiter)
-                        .Get(new YadModelV2JournalCountersV2());
-
-        Task.WaitAll(operationsTask, countersTask);
-
-        CheckForError(operationsTask.Result);
-        CheckForError(countersTask.Result);
-
-        var list = operationsTask.Result.ActiveOperations?
-            .Select(x => new ActiveOperation
-            {
-                OpId = x.Id,
-                Uid = x.Uid,
-                Type = x.Type,
-                SourcePath = DtoImportYadWeb.GetOpPath(x.Data.Source),
-                TargetPath = DtoImportYadWeb.GetOpPath(x.Data.Target),
-            })?.ToList();
-
-        var info = new CheckUpInfo
+        try
         {
-            AccountInfo = new CheckUpInfo.CheckInfo
-            {
-                //FilesCount = accountInfo?.Data?.FilesCount ?? 0,
-                //Free = accountInfo?.Data?.Free ?? 0,
-                //Trash = accountInfo?.Data?.Trash ?? 0,
-                JournalCounters = new JournalCounters(countersTask.Result?.Result)
-            },
-            ActiveOperations = list,
-        };
+            // Список все еще продолжающихся операций
+            var operationsTask = new YadCommonRequestV2(HttpSettings, YadAuth, _connectionLimiter)
+                            .Get(new YadModelV2ActiveOperationsV2());
 
-        return Task.FromResult(info);
+            // Надо учитывать, что счетчики обновляются через 10-15 секунд после операции
+            var countersTask = new YadCommonRequestV2(HttpSettings, YadAuth, _connectionLimiter)
+                            .Get(new YadModelV2JournalCountersV2());
+
+            Task.WaitAll(operationsTask, countersTask);
+
+            CheckForError(operationsTask.Result);
+            CheckForError(countersTask.Result);
+
+            var list = operationsTask.Result.ActiveOperations?
+                .Select(x => new ActiveOperation
+                {
+                    OpId = x.Id,
+                    Uid = x.Uid,
+                    Type = x.Type,
+                    SourcePath = DtoImportYadWeb.GetOpPath(x.Data.Source),
+                    TargetPath = DtoImportYadWeb.GetOpPath(x.Data.Target),
+                })?.ToList();
+
+            var info = new CheckUpInfo
+            {
+                AccountInfo = new CheckUpInfo.CheckInfo
+                {
+                    //FilesCount = accountInfo?.Data?.FilesCount ?? 0,
+                    //Free = accountInfo?.Data?.Free ?? 0,
+                    //Trash = accountInfo?.Data?.Trash ?? 0,
+                    JournalCounters = new JournalCounters(countersTask.Result?.Result)
+                },
+                ActiveOperations = list,
+            };
+
+            return Task.FromResult(info);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

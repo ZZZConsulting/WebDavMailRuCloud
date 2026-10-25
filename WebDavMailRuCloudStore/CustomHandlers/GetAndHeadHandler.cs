@@ -2,15 +2,16 @@
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using log4net.Core;
 using NWebDav.Server;
 using NWebDav.Server.Helpers;
 using NWebDav.Server.Http;
+using NWebDav.Server.Logging;
 using NWebDav.Server.Props;
 using NWebDav.Server.Stores;
 
 namespace YaR.Clouds.WebDavStore.CustomHandlers
 {
-
     /// <summary>
     /// Implementation of the GET and HEAD method.
     /// </summary>
@@ -23,6 +24,8 @@ namespace YaR.Clouds.WebDavStore.CustomHandlers
     /// </remarks>
     public class GetAndHeadHandler : IRequestHandler
     {
+        private static readonly NWebDav.Server.Logging.ILogger Logger = LoggerFactory.Factory.CreateLogger(typeof(GetAndHeadHandler));
+
         /// <summary>
         /// Handle a GET or HEAD request.
         /// </summary>
@@ -161,6 +164,12 @@ namespace YaR.Clouds.WebDavStore.CustomHandlers
                         response.Abort();
                         // Do not throw an exception
                     }
+                    catch (IOException ex)
+                    {
+                        Logger.Log(LogLevel.Warning, ex.Message);
+                        response.Abort();
+                        // Do not throw an exception
+                    }
                     catch (Exception)
                     {
                         // if error occurred when copying streams client will hang till timed out so we need to abort connection
@@ -192,19 +201,25 @@ namespace YaR.Clouds.WebDavStore.CustomHandlers
             // Determine the number of bytes to read
             var bytesToRead = end - start + 1 ?? long.MaxValue;
 
-            // Read in 64KB blocks
+            // Read in 64KB blocks, see the const defined in RingBufferedStream
             var buffer = new byte[64 * 1024];
 
             // Copy, until we don't get any data anymore
             while (bytesToRead > 0)
             {
                 // Read the requested bytes into memory
-                var requestedBytes = (int)Math.Min(bytesToRead, buffer.Length);
+                var requestedBytes = buffer.Length;
+                if (requestedBytes > bytesToRead)
+                    requestedBytes = (int)bytesToRead;
                 var bytesRead = await src.ReadAsync(buffer, 0, requestedBytes).ConfigureAwait(false);
 
                 // We're done, if we cannot read any data anymore
                 if (bytesRead == 0)
+                {
+                    if (src.Position == 0)
+                        throw new IOException("The Cloud does not return the file content!");
                     return;
+                }
 
                 // Write the data to the destination stream
                 await dest.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
